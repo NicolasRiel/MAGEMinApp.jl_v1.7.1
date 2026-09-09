@@ -383,6 +383,7 @@ function Tab_Simulation()
                                                 options = [
                                                     (label = "O. Laurent (2012)", value = "OL"),
                                                     (label = "J. Cornet (2019)",  value = "CO"),
+                                                    (label = "Yakymchuk et al. (2025)", value = "Yak25"),
                                                 ],
                                                 value       = "OL" ,
                                                 clearable   =  false,
@@ -416,6 +417,7 @@ function Tab_Simulation()
                                                 options = [
                                                     (label = "O. Laurent (2012)", value = "OL"),
                                                     (label = "J. Cornet (2019)",  value = "CO"),
+                                                    (label = "Yakymchuk et al. (2025)", value = "Yak25"),
                                                 ],
                                                 value       = "OL" ,
                                                 clearable   =  false,
@@ -474,14 +476,31 @@ function Tab_Simulation()
                                                 ]),
                                             ]),
                                             dbc_row([
-                                                dbc_col([ 
+                                                dbc_col([
                                                     html_h1("CO2 saturation", style = Dict("textAlign" => "center","font-size" => "120%",  "marginTop" => 8)),
                                                 ]),
-                                                dbc_col([ 
+                                                dbc_col([
                                                     dcc_dropdown(   id      = "co2sat-dropdown",
                                                     options = [
                                                         (label = "none",                    value = "none"),
                                                         (label = "Sun & Yao, 2026",         value = "SY26"),
+                                                    ],
+                                                    value       = "none" ,
+                                                    clearable   =  false,
+                                                    multi       =  false),
+                                                ]),
+                                            ]),
+                                            dbc_row([
+                                                dbc_col([
+                                                    html_h1("Monazite saturation", style = Dict("textAlign" => "center","font-size" => "120%",  "marginTop" => 8)),
+                                                ]),
+                                                dbc_col([
+                                                    dcc_dropdown(   id      = "mnzsat-dropdown",
+                                                    options = [
+                                                        (label = "none",                    value = "none"),
+                                                        (label = "Stepanov et al., 2012",   value = "Stepanov12"),
+                                                        (label = "Montel, 1993",            value = "Montel93"),
+                                                        (label = "Maimaiti et al., 2019",   value = "Maimaiti19"),
                                                     ],
                                                     value       = "none" ,
                                                     clearable   =  false,

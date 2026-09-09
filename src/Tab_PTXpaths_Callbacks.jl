@@ -531,8 +531,9 @@ function Tab_PTXpaths_Callbacks(app)
         State("ssat-dropdown-ptx",              "value"),
         State("P2O5sat-dropdown-ptx",           "value"),
         State("co2sat-dropdown-ptx",            "value"),
+        State("mnzsat-dropdown-ptx",            "value"),
         prevent_initial_call=true,
-    ) do n_clicks, fname, dtb, kds, zrsat, ssat, P2O5sat, co2sat
+    ) do n_clicks, fname, dtb, kds, zrsat, ssat, P2O5sat, co2sat, mnzsat
 
         if !@isdefined(Out_TE_PTX) || isempty(Out_TE_PTX)
             return false, false, true
@@ -554,6 +555,9 @@ function Tab_PTXpaths_Callbacks(app)
         end
         if co2sat != "none"
             sat_ext *= "_$co2sat"
+        end
+        if mnzsat != "none"
+            sat_ext *= "_$mnzsat"
         end
 
         mkpath(output_dir[1])
@@ -579,8 +583,9 @@ function Tab_PTXpaths_Callbacks(app)
         State("ssat-dropdown-ptx",                          "value"),
         State("P2O5sat-dropdown-ptx",                       "value"),
         State("co2sat-dropdown-ptx",                        "value"),
+        State("mnzsat-dropdown-ptx",                        "value"),
         prevent_initial_call=true,
-    ) do n_clicks, fname, dtb, kds, zrsat, ssat, P2O5sat, co2sat
+    ) do n_clicks, fname, dtb, kds, zrsat, ssat, P2O5sat, co2sat, mnzsat
 
         if !@isdefined(Out_TE_PTX) || isempty(Out_TE_PTX)
             return false, false, true
@@ -602,6 +607,9 @@ function Tab_PTXpaths_Callbacks(app)
         end
         if co2sat != "none"
             sat_ext *= "_$co2sat"
+        end
+        if mnzsat != "none"
+            sat_ext *= "_$mnzsat"
         end
 
         mkpath(output_dir[1])
@@ -1313,6 +1321,7 @@ function Tab_PTXpaths_Callbacks(app)
         State("ssat-dropdown-ptx",              "value"),
         State("P2O5sat-dropdown-ptx",           "value"),
         State("co2sat-dropdown-ptx",            "value"),
+        State("mnzsat-dropdown-ptx",            "value"),
         State("table-te-rock-ptx",              "data"  ),
         State("table-te-2-rock-ptx",            "data"  ),
 
@@ -1340,7 +1349,7 @@ function Tab_PTXpaths_Callbacks(app)
                 nCon,       nConRes,    nRes,       color_table,
                 T_start,    isentropic_mode, entropy,
                 watsat,     watsat_val,
-                te_model,   kds_mod,    zrsat_mod,  ssat_mod,   P2O5sat_mod,    co2sat_mod, bulkte1,    bulkte2,
+                te_model,   kds_mod,    zrsat_mod,  ssat_mod,   P2O5sat_mod,    co2sat_mod, mnzsat_mod,     bulkte1,    bulkte2,
                 sas,        wf,         seismicCorVal,
                 aspectRatioVal, seismicWaterMode, shallowCorMode, fluidAsMeltMode, anelasticCorMode,
                 calcUnit,   ptxTableAdvData, threshStore, reminimizeThreshold, computeVersion
@@ -1392,7 +1401,7 @@ function Tab_PTXpaths_Callbacks(app)
                                     nCon,       nConRes,    nRes,
                                     T_start,    isentropic_mode,
                                     watsat,     watsat_val,
-                                    te_model,   kds_mod,    zrsat_mod,  ssat_mod,   P2O5sat_mod,    co2sat_mod,
+                                    te_model,   kds_mod,    zrsat_mod,  ssat_mod,   P2O5sat_mod,    co2sat_mod, mnzsat_mod,
                                     bulkte_ini_te, bulkte_ass_te, elem_te,
                                     seismicScheme, seismicWeightFactor, seismicCorMode,
                                     aspectRatio, seismicWater, shallowCor, fluidAsMelt, anelasticCor,

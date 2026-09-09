@@ -307,16 +307,17 @@ function Tab_TraceElement()
                                                             (label = "Sulfide",             value = "sulf"     ),
                                                             (label = "Fluorapatite",        value = "fapt"     ),
                                                             (label = "CO2 saturation",      value = "co2sat"   ),
+                                                            (label = "Monazite",            value = "mnz"      ),
                                                             (label = "Trace element",       value = "te"       ),
                                                         ],
                                                         value="zrc" ,
                                                         clearable   = false,
                                                         multi       = false),
-                                    ]), 
+                                    ]),
                                 ]),
                                 html_div([
                                 dbc_row([
-                                    dbc_col([ 
+                                    dbc_col([
                                         html_h1("Field", style = Dict("textAlign" => "center","font-size" => "120%", "marginTop" => 8)),
                                     ], width=5),
                                     dbc_col([
@@ -328,7 +329,7 @@ function Tab_TraceElement()
                                                         value="Sat_Zr_liq" ,
                                                         clearable   = false,
                                                         multi       = false),
-                                    ]), 
+                                    ]),
                                 ]),
                                 ], style = Dict("display" => "block"), id      = "show-zircon-id"), #none, bloc
 
@@ -387,6 +388,24 @@ function Tab_TraceElement()
                                     ]),
                                 ]),
                                 ], style = Dict("display" => "none"), id      = "show-co2sat-id"), #none, bloc
+
+                                html_div([
+                                dbc_row([
+                                    dbc_col([
+                                        html_h1("Field", style = Dict("textAlign" => "center","font-size" => "120%", "marginTop" => 8)),
+                                    ], width=5),
+                                    dbc_col([
+                                        dcc_dropdown(   id      = "fields-dropdown-mnz",
+                                                        options = [
+                                                            (label = "Sat_LREE_liq",            value = "Sat_LREE_liq" ),
+                                                            (label = "mnz_wt",                  value = "mnz_wt"       ),
+                                                        ],
+                                                        value="Sat_LREE_liq" ,
+                                                        clearable   = false,
+                                                        multi       = false),
+                                    ]),
+                                ]),
+                                ], style = Dict("display" => "none"), id      = "show-monazite-id"), #none, bloc
 
                                 html_div([
                                 dbc_row([
@@ -604,6 +623,7 @@ function Tab_TraceElement()
                                                         (label = "Sulfide",             value = "sulf"      ),
                                                         (label = "Fluorapatite",        value = "fapt"      ),
                                                         (label = "CO2 saturation",      value = "co2sat"    ),
+                                                        (label = "Monazite",            value = "mnz"       ),
                                                         (label = "Trace element",       value = "te"        ),
                                                         ],
                                                     value       = "zrc",
@@ -686,6 +706,25 @@ function Tab_TraceElement()
                                                 ]),
                                             ]),
                                         ], style = Dict("display" => "none"), id      = "fields-dropdown-co2sat-id-te"),
+
+
+                                        html_div([
+                                            dbc_row([
+                                                dbc_col([
+                                                    html_h1("Field", style = Dict("textAlign" => "center","font-size" => "120%", "marginTop" => 8)),
+                                                ], width=6),
+                                                dbc_col([
+                                                    dcc_dropdown(   id      = "fields-dropdown-mnz-te",
+                                                                    options = [
+                                                                        (label = "Sat_LREE_liq",            value = "Sat_LREE_liq" ),
+                                                                        (label = "mnz_wt",                  value = "mnz_wt"       ),
+                                                                    ],
+                                                                    value       = "Sat_LREE_liq" ,
+                                                                    clearable   =  false,
+                                                                    multi       =  false ),
+                                                ]),
+                                            ]),
+                                        ], style = Dict("display" => "none"), id      = "fields-dropdown-mnz-id-te"),
 
                                         html_div([
                                             dbc_row([

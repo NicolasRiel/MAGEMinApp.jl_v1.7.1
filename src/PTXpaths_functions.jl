@@ -723,7 +723,7 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
                                 watsat      = "false",  watsat_val  = 0.0,
                                 te_model    = "false",
                                 kds_mod     = "",       zrsat_mod   = "none",
-                                ssat_mod    = "none",   P2O5sat_mod = "none",   co2sat_mod  = "none",
+                                ssat_mod    = "none",   P2O5sat_mod = "none",   co2sat_mod  = "none",   mnzsat_mod  = "none",
                                 bulkte_ini  = Float64[], bulkte_ass  = Float64[], elem_TE = String[],
                                 seismicScheme = "VRH",  seismicWeightFactor = 0.5, seismicCorMode = false,
                                 aspectRatio = 0.3, seismicWater = 0, shallowCor = false, fluidAsMelt = false, anelasticCor = false,
@@ -1071,7 +1071,7 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
                                     fracEvol[k+1,2]     = 1.0 - fracEvol[k+1,1]
                                     fracEvol[k+1,3]     = 1.0 - (frac_S_val(Out_PTX[k]) + frac_F_val(Out_PTX[k]) + nConRes/100.0)
                                     if te_enabled
-                                        Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod)
+                                        Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod, MnzSat_model=mnzsat_mod)
                                         if !all(isnan, Out_TE_PTX[k].Csol) && !all(isnan, Out_TE_PTX[k].Cliq)
                                             w_M_te            = te_melt_wt_frac(Out_PTX[k], (100.0-nConRes)/100.0, nConRes/100.0)
                                             bulkte_cur        = Out_TE_PTX[k].Csol .* (1.0 - w_M_te) .+ Out_TE_PTX[k].Cliq .* w_M_te
@@ -1084,7 +1084,7 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
                                     fracEvol[k+1,2]     = 1.0 - fracEvol[k+1,1]
                                     fracEvol[k+1,3]     = 0.0
                                     if te_enabled
-                                        Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod)
+                                        Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod, MnzSat_model=mnzsat_mod)
                                         # below connectivity: no bulk update, no extraction
                                     end
                                 end
@@ -1095,7 +1095,7 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
                                 fracEvol[k+1,2]     = 1.0 - fracEvol[k+1,1]
                                 fracEvol[k+1,3]     = 0.0
                                 if te_enabled
-                                    Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod)
+                                    Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod, MnzSat_model=mnzsat_mod)
                                     if !all(isnan, Out_TE_PTX[k].Csol)
                                         bulkte_cur = copy(Out_TE_PTX[k].Csol)
                                         # no C_ext_TE_PTX: mirrors removedBulk = zeros
@@ -1108,7 +1108,7 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
                             fracEvol[k+1,2]     = 1.0 - fracEvol[k+1,1]
                             fracEvol[k+1,3]     = 0.0
                             if te_enabled
-                                Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod)
+                                Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod, MnzSat_model=mnzsat_mod)
                                 # no solid: no bulk update
                             end
                         end
@@ -1130,7 +1130,7 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
                                     fracEvol[k+1,2]     = 1.0 - fracEvol[k+1,1]
                                     fracEvol[k+1,3]     = 1.0 - frac_M_val(Out_PTX[k]) - nRes/100.0
                                     if te_enabled
-                                        Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod)
+                                        Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod, MnzSat_model=mnzsat_mod)
                                         if !all(isnan, Out_TE_PTX[k].Cliq) && !all(isnan, Out_TE_PTX[k].Csol)
                                             w_M_te            = te_melt_wt_frac(Out_PTX[k], nRes/100.0, (100.0-nRes)/100.0)
                                             w_M_ext_te        = te_melt_wt_frac(Out_PTX[k], (100.0-nRes)/100.0, nRes/100.0)
@@ -1145,7 +1145,7 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
                                     fracEvol[k+1,2]     = 1.0 - fracEvol[k+1,1]
                                     fracEvol[k+1,3]     = 1.0 - (frac_M_val(Out_PTX[k]) - frac_S_val(Out_PTX[k]))
                                     if te_enabled
-                                        Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod)
+                                        Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod, MnzSat_model=mnzsat_mod)
                                         if !all(isnan, Out_TE_PTX[k].Cliq) && !all(isnan, Out_TE_PTX[k].Csol)
                                             bulkte_cur        = copy(Out_TE_PTX[k].Cliq)
                                             C_ext_TE_PTX[k+1] = copy(Out_TE_PTX[k].Csol)
@@ -1159,7 +1159,7 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
                                 fracEvol[k+1,2]     = 1.0 - fracEvol[k+1,1]
                                 fracEvol[k+1,3]     = 1.0 - frac_M_val(Out_PTX[k])
                                 if te_enabled
-                                    Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod)
+                                    Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod, MnzSat_model=mnzsat_mod)
                                     if !all(isnan, Out_TE_PTX[k].Cliq) && !all(isnan, Out_TE_PTX[k].Csol)
                                         bulkte_cur        = copy(Out_TE_PTX[k].Cliq)
                                         C_ext_TE_PTX[k+1] = copy(Out_TE_PTX[k].Csol)
@@ -1172,7 +1172,7 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
                             fracEvol[k+1,2]     = 1.0 - fracEvol[k+1,1]
                             fracEvol[k+1,3]     = 0.0
                             if te_enabled
-                                Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod)
+                                Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod, MnzSat_model=mnzsat_mod)
                                 # no melt: no bulk update
                             end
                         end
@@ -1182,7 +1182,7 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
                         fracEvol[k+1,2]     = 1.0 - fracEvol[k+1,1]
                         fracEvol[k+1,3]     = 0.0
                         if te_enabled
-                            Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod)
+                            Out_TE_PTX[k] = TE_prediction(Out_PTX[k], TEvec, KDs_dtb, dtb; ZrSat_model=zrsat_mod, SSat_model=ssat_mod, P2O5Sat_model=P2O5sat_mod, CO2Sat_model=co2sat_mod, MnzSat_model=mnzsat_mod)
                             # not fc/fm: no bulk update
                         end
                     end
@@ -1386,7 +1386,8 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
                                                ZrSat_model   = zrsat_mod,
                                                SSat_model    = ssat_mod,
                                                P2O5Sat_model = P2O5sat_mod,
-                                               CO2Sat_model  = co2sat_mod)
+                                               CO2Sat_model  = co2sat_mod,
+                                               MnzSat_model  = mnzsat_mod)
                 if !isnothing(Out_TE_PTX[k].ph_TE)
                     for ph in Out_TE_PTX[k].ph_TE
                         if !(ph in all_TE_ph)

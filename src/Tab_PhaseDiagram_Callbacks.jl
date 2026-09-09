@@ -1339,6 +1339,7 @@ function Tab_PhaseDiagram_Callbacks(app)
         State("ssat-dropdown",          "value"),
         State("co2sat-dropdown",        "value"),
         State("P2O5sat-dropdown",       "value"),
+        State("mnzsat-dropdown",        "value"),
         State("table-te-rock",          "data" ),            # bulk-rock 1
         State("table-te-2-rock",        "data" ),  
 
@@ -1389,7 +1390,7 @@ function Tab_PhaseDiagram_Callbacks(app)
             bulk1,      bulk2,      sys_unit,
             bufferN1,   bufferN2,
             mumu_oxide1, mumu_oxide2, mumu_mu1_min, mumu_mu1_max, mumu_mu2_min, mumu_mu2_max,
-            tepm,       kds_mod,    zrsat_mod,  ssat_mod,   co2sat_mod, P2O5sat_mod,    bulkte1,    bulkte2,
+            tepm,       kds_mod,    zrsat_mod,  ssat_mod,   co2sat_mod, P2O5sat_mod,    mnzsat_mod,     bulkte1,    bulkte2,
             test,
             isopleths,  isoplethsID,isoplethsHid,  isoplethsHidID,  phase,      ss,         em,     ox,    of,     ot, sys, rmf, calc, cust, calc_sf, calc_ox, cust_sf, cust_ox,
             isoLineStyle, isoLineWidth, isoColorLine,           isoLabelSize,   
@@ -1487,7 +1488,7 @@ function Tab_PhaseDiagram_Callbacks(app)
             if tepm == "true"
                 if dtb != "um" && dtb != "ume" && dtb != "mtl"
                     t = @elapsed Out_TE_XY,all_TE_ph = tepm_function(   diagType, dtb,
-                                                                        kds_mod, zrsat_mod, ssat_mod, co2sat_mod, P2O5sat_mod,
+                                                                        kds_mod, zrsat_mod, ssat_mod, co2sat_mod, P2O5sat_mod, mnzsat_mod,
                                                                         bulkte_L, bulkte_R, elem)
 
                     println("Computed trace element partitioning in $t s")
@@ -1544,7 +1545,7 @@ function Tab_PhaseDiagram_Callbacks(app)
             if tepm == "true"
                 if dtb != "um" && dtb != "ume" && dtb != "mtl"
                     t = @elapsed Out_TE_XY,all_TE_ph = tepm_function(   diagType, dtb,
-                                                                        kds_mod, zrsat_mod, ssat_mod, co2sat_mod, P2O5sat_mod,
+                                                                        kds_mod, zrsat_mod, ssat_mod, co2sat_mod, P2O5sat_mod, mnzsat_mod,
                                                                         bulkte_L, bulkte_R, elem)
                     println("Computed trace element partitioning in $t s")
                 else
