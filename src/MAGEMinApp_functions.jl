@@ -371,6 +371,8 @@ end
 function build_kds_database(kds_mod::String)
     if kds_mod == "CO"
         return MAGEMin_C.get_CO_KDs_database()
+    elseif kds_mod == "Yak25"
+        return MAGEMin_C.get_TE_database("Yak25")
     else
         TE_models   = [AppData.KDs[i][4] for i in 1:length(AppData.KDs)]
         id_TE_model = findfirst(TE_models .== kds_mod)
@@ -1422,6 +1424,11 @@ function get_gridded_map(   fieldname   ::String,
             field[i] = get_property(Out_TE_XY[i], fieldname);
         end
         field[isnan.(field)] .= 0.0
+    elseif type == "mnz"
+        for i=1:np
+            field[i] = get_property(Out_TE_XY[i], fieldname);
+        end
+        field[isnan.(field)] .= 0.0
     else
         if fieldname == "#Phases"
             for i=1:np
@@ -1750,6 +1757,11 @@ function get_gridded_map_no_lbl(    fieldname   ::String,
         end
         field[isnan.(field)] .= 0.0
     elseif type == "co2sat"
+        for i=1:np
+            field[i] = get_property(Out_TE_XY[i], fieldname);
+        end
+        field[isnan.(field)] .= 0.0
+    elseif type == "mnz"
         for i=1:np
             field[i] = get_property(Out_TE_XY[i], fieldname);
         end
@@ -2241,6 +2253,11 @@ function get_isopleth_map_te(   mod         ::String,
         end
         field[isnan.(field)] .= 0.0
     elseif mod == "co2sat"
+        for i=1:np
+            field[i] = get_property(Out_TE_XY[i], acces_name);
+        end
+        field[isnan.(field)] .= 0.0
+    elseif mod == "mnz"
         for i=1:np
             field[i] = get_property(Out_TE_XY[i], acces_name);
         end

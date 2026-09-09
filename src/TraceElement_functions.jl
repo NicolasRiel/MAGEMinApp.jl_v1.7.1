@@ -16,7 +16,7 @@ function get_layout_ree(norm        :: String,
                         show_type   :: String,
                         kds_db      :: String)
 
-    if kds_db == "OL" || kds_db == "CO"                
+    if kds_db == "OL" || kds_db == "CO" || kds_db == "Yak25"
         if show_type == "ree"
             xaxis_title = "Rare Earth Elements"
         elseif show_type == "all"
@@ -55,10 +55,11 @@ function get_data_ree_plot(point_id_te, norm, show_type, kds_db)
     te_chondrite    = ["Rb", "Ba", "Th", "U", "Nb", "Ta", "La", "Ce", "Pb", "Pr", "Sr", "Nd", "Zr", "Hf", "Sm", "Eu", "Gd", "Tb", "Dy", "Y", "Ho", "Er", "Tm", "Yb", "Lu", "V", "Sc", "Cs", "K", "Ti"]
     ppm_chondrite   = [2.3, 2.41,0.029,0.0074,0.24,0.0136,0.237,0.613,2.47,0.0928,7.25,0.457,3.82,0.103,0.148,0.0563,0.199,0.0361,0.246,1.57,0.0546,0.160,0.0247,0.161,0.0246,56,5.92,0.188,558.0,436.0]
 
-    if kds_db == "OL" || kds_db == "CO"
+    if kds_db == "OL" || kds_db == "CO" || kds_db == "Yak25"
         if show_type == "ree"
-            te      = ree
-            te_idx  = [findfirst(isequal(x), Out_TE_XY[point_id_te].elements) for x in ree];
+            mask    = [!isnothing(findfirst(isequal(x), Out_TE_XY[point_id_te].elements)) for x in ree]
+            te      = ree[mask]
+            te_idx  = [findfirst(isequal(x), Out_TE_XY[point_id_te].elements) for x in te]
         elseif show_type == "all"
             mask    = [!isnothing(findfirst(isequal(x), Out_TE_XY[point_id_te].elements)) for x in te_chondrite]
             te      = te_chondrite[mask]
@@ -103,7 +104,7 @@ function get_data_ree_plot(point_id_te, norm, show_type, kds_db)
 
     # te_idx   = [findfirst(isequal(x), Out_TE_XY[point_id_te].elements) for x in ree];
     k = 1
-    if kds_db == "OL" || kds_db == "CO"
+    if kds_db == "OL" || kds_db == "CO" || kds_db == "Yak25"
         chon_idx = [findfirst(isequal(x), te_chondrite) for x in te]
         if show_type == "ree"
             if norm == "chondrite"
@@ -360,7 +361,7 @@ end
 function add_isopleth_phaseDiagram_te(      Xrange,     Yrange, 
                                             sub,        refLvl,
                                             dtb,        oxi,
-                                            isopleths_te,  field,  field_zrc, field_sulf, field_fapt, field_co2sat, calc, cust, norm_tes,
+                                            isopleths_te,  field,  field_zrc, field_sulf, field_fapt, field_co2sat, field_mnz, calc, cust, norm_tes,
                                             isoLineStyle,   isoLineWidth, isoColorLine,           isoLabelSize,       
                                             minIso,     stepIso,    maxIso      )
 
@@ -385,6 +386,9 @@ function add_isopleth_phaseDiagram_te(      Xrange,     Yrange,
     elseif (field == "co2sat")
         mod     = "co2sat"
         name    = field_co2sat
+    elseif (field == "mnz")
+        mod     = "mnz"
+        name    = field_mnz
     else
         println("Wrong combination, needs debugging...")
     end

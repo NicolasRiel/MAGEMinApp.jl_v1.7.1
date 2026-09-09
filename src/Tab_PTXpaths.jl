@@ -701,7 +701,8 @@ function Tab_PTXpaths()
                             dbc_col([
                                 dcc_dropdown(   id      = "kds-dropdown-ptx",
                                                 options = [Dict("label" => "OL", "value" => "OL"),
-                                                           Dict("label" => "CO", "value" => "CO")],
+                                                           Dict("label" => "CO", "value" => "CO"),
+                                                           Dict("label" => "Yak25", "value" => "Yak25")],
                                                 value   = "OL",
                                                 clearable = false,
                                                 multi   = false),
@@ -770,6 +771,24 @@ function Tab_PTXpaths()
                                                 options = [
                                                     (label = "none",            value = "none"),
                                                     (label = "Sun & Yao, 2026", value = "SY26"),
+                                                ],
+                                                value   = "none",
+                                                clearable = false,
+                                                multi   = false),
+                            ]),
+                        ]),
+
+                        dbc_row([
+                            dbc_col([
+                                html_h1("Monazite saturation", style = Dict("textAlign" => "center","font-size" => "120%", "marginTop" => 4)),
+                            ],width=6),
+                            dbc_col([
+                                dcc_dropdown(   id      = "mnzsat-dropdown-ptx",
+                                                options = [
+                                                    (label = "none",                  value = "none"),
+                                                    (label = "Stepanov et al., 2012", value = "Stepanov12"),
+                                                    (label = "Montel, 1993",          value = "Montel93"),
+                                                    (label = "Maimaiti et al., 2019", value = "Maimaiti19"),
                                                 ],
                                                 value   = "none",
                                                 clearable = false,

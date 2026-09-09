@@ -904,6 +904,7 @@ function tepm_function( diagType    :: String,
                         ssat_mod    :: String,
                         co2sat_mod  :: String,
                         P2O5sat_mod :: String,
+                        mnzsat_mod  :: String,
                         bulkte_L    :: Vector{Float64},
                         bulkte_R    :: Vector{Float64},
                         elem_TE     :: Vector{String})
@@ -932,7 +933,8 @@ function tepm_function( diagType    :: String,
                                       ZrSat_model   = zrsat_mod,
                                       SSat_model    = ssat_mod,
                                       CO2Sat_model  = co2sat_mod,
-                                      P2O5Sat_model = P2O5sat_mod)
+                                      P2O5Sat_model = P2O5sat_mod,
+                                      MnzSat_model  = mnzsat_mod)
 
         if ~isnothing(Out_TE_XY[i].ph_TE)
             for j in Out_TE_XY[i].ph_TE
