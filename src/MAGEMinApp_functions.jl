@@ -764,6 +764,11 @@ function save_equilibrium_to_file(  out::MAGEMin_C.gmin_struct{Float64, Int64}, 
         file *= @sprintf(" %8f",out.bulk_wt[i])
     end
     file *= @sprintf("\n")  
+    file *= @sprintf(" %8s","SOL") 
+    for i=1:length(out.bulk_S_wt)
+        file *= @sprintf(" %8f",out.bulk_S_wt[i])
+    end
+    file *= @sprintf("\n")  
     for i=1:out.n_SS
         file *= @sprintf(" %8s",display_ph_name(out.ph[i]))
         for j=1:length(out.SS_vec[i].Comp_wt)
