@@ -764,6 +764,11 @@ function save_equilibrium_to_file(  out::MAGEMin_C.gmin_struct{Float64, Int64}, 
         file *= @sprintf(" %8f",out.bulk_wt[i])
     end
     file *= @sprintf("\n")  
+    file *= @sprintf(" %8s","SOL") 
+    for i=1:length(out.bulk_S_wt)
+        file *= @sprintf(" %8f",out.bulk_S_wt[i])
+    end
+    file *= @sprintf("\n")  
     for i=1:out.n_SS
         file *= @sprintf(" %8s",display_ph_name(out.ph[i]))
         for j=1:length(out.SS_vec[i].Comp_wt)
@@ -2475,6 +2480,10 @@ end
     For frac2, add columns with _frac2 suffix:
         title,comments,db,sysUnit,SiO2,CaO,...,SiO2_frac2,CaO_frac2,...
 """
+function strip_bom(s::AbstractString)
+    return startswith(s, "\ufeff") ? s[nextind(s, 1):end] : s
+end
+
 function bulk_csv_to_db(datain)
 
     global db;
@@ -2607,7 +2616,7 @@ function parse_bulk_rock(contents, filename)
     try
         content_type, content_string = split(contents, ',');
         decoded = base64decode(content_string);
-        input   = String(decoded) ;
+        input   = strip_bom(String(decoded));
 
         if endswith(lowercase(filename), ".csv")
             first_line = split(input, '\n')[findfirst(l -> !startswith(strip(l), '#') && !isempty(strip(l)), split(input, '\n'))]
@@ -2642,7 +2651,7 @@ function parse_path_csv(contents, filename, header_map::Dict{String,String}, req
     try
         content_type, content_string = split(contents, ',');
         decoded = base64decode(content_string);
-        input   = String(decoded);
+        input   = strip_bom(String(decoded));
 
         lines     = split(input, '\n');
         first_idx = findfirst(l -> !startswith(strip(l), '#') && !isempty(strip(l)), lines);
@@ -2689,7 +2698,7 @@ function parse_bulk_te(contents, filename, kdsDB)
     try
         content_type, content_string = split(contents, ',');
         decoded = base64decode(content_string);
-        input   = String(decoded) ;
+        input   = strip_bom(String(decoded));
 
         if endswith(lowercase(filename), ".csv")
             datain = strip.(string.(readdlm(IOBuffer(input), ',', comments=true, comment_char='#')));
