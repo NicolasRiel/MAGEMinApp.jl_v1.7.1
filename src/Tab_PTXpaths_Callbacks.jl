@@ -1910,9 +1910,25 @@ function Tab_PTXpaths_Callbacks(app)
                                                  "value"     => i )
                                                 for i in pp_disp ]
 
-        # phase picker for the advanced path-definition (per-phase extraction threshold) panel
-        adv_phase_options = vcat(  [Dict("label" => " "*display_ph_name_tagged(i, ss_fname_lu), "value" => i) for i in db_in.ss_name],
-                                    [Dict("label" => " "*display_ph_name(i), "value" => i) for i in pp_disp ] )
+        # phase picker for the advanced path-definition (per-phase extraction threshold) panel:
+        # also list known solvus-daughter mineral names (e.g. fsp -> afs, pl) so a specific
+        # daughter can be targeted directly -- picking the parent name still catches every
+        # daughter that shows up along the path (see compute_new_PTXpath)
+        adv_phase_options = []
+        adv_seen          = Set{String}()
+        for i in db_in.ss_name
+            push!(adv_phase_options, Dict("label" => " "*display_ph_name_tagged(i, ss_fname_lu), "value" => i))
+            push!(adv_seen, i)
+            fam = get(AppData.dict_ss, i, nothing)
+            isnothing(fam) && continue
+            splits, splits_full = fam[2][1], fam[2][2]
+            for (k, s) in enumerate(splits)
+                (s == i || s in adv_seen) && continue
+                push!(adv_phase_options, Dict("label" => "     ↳ "*display_ph_name(s)*" ("*splits_full[k]*")", "value" => s))
+                push!(adv_seen, s)
+            end
+        end
+        append!(adv_phase_options, [Dict("label" => " "*display_ph_name(i), "value" => i) for i in pp_disp ])
 
         # remember the (de)activated phases per database, so switching databases (or
         # reloading the page) restores the last selection made for that database

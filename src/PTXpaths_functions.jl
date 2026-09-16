@@ -1217,42 +1217,54 @@ function compute_new_PTXpath(   nsteps,     PTdata,     mode,       bulk_ini,   
 
                         for entry in phase_thresholds
                             thr_val = entry.values[i] + (j-1)*((entry.values[i+1]-entry.values[i])/(nsteps+1))
-                            id_ph   = findall(pt.ph .== entry.phase)
-                            isempty(id_ph) && continue
 
-                            excess_mol_frac = phase_excess_mol_frac(pt, id_ph, entry.unit, thr_val)
-                            excess_mol_frac <= 0.0 && continue
+                            # A chosen phase can appear along the path under several solvus-
+                            # disambiguated mineral names (MAGEMin's name_solvus=true renames
+                            # e.g. "fsp" to "afs"/"pl", never keeping "fsp" once split). Check
+                            # the selected name plus every known solvus daughter (AppData.dict_ss)
+                            # independently -- each is capped against the same threshold on its
+                            # own, since the parent and its daughters never coexist under one name.
+                            fam         = get(AppData.dict_ss, entry.phase, nothing)
+                            match_names = isnothing(fam) ? [entry.phase] : unique(vcat([entry.phase], fam[2][1]))
 
-                            comps    = [ i_ph <= n_SS ? pt.SS_vec[i_ph].Comp : pt.PP_vec[i_ph - n_SS].Comp for i_ph in id_ph ]
-                            comp_avg = sum(comps) ./ length(comps)   # simple average across solvus instances
+                            for match_name in match_names
+                                id_ph = findall(pt.ph .== match_name)
+                                isempty(id_ph) && continue
 
-                            bulk             .-= excess_mol_frac .* comp_avg
-                            bulk[bulk .< 0.0] .= 0.0
-                            bulk            ./= sum(bulk)
+                                excess_mol_frac = phase_excess_mol_frac(pt, id_ph, entry.unit, thr_val)
+                                excess_mol_frac <= 0.0 && continue
 
-                            # removedBulk/fracEvol are tracked in `calcUnit` basis (mol
-                            # or wt) throughout the rest of this function; convert this
-                            # mol-basis excess the same way, reusing the molar-mass
-                            # ratio trick already used for the trace-element fix (this
-                            # phase's own mol vs wt fraction gives exactly that ratio),
-                            # and MAGEMin's own already-fraction-scaled Comp_wt fields
-                            # for the composition shape -- NOT the mol2wt()/wt2mol()
-                            # utility functions, which are percent-scaled (sum to 100,
-                            # for user-facing bulk-rock display) rather than fraction-
-                            # scaled (sum to 1), unlike every native gmin_struct field.
-                            if calcUnit == "wt"
-                                comps_wt         = [ i_ph <= n_SS ? pt.SS_vec[i_ph].Comp_wt : pt.PP_vec[i_ph - n_SS].Comp_wt for i_ph in id_ph ]
-                                comp_avg_wt      = sum(comps_wt) ./ length(comps_wt)
-                                wt_frac_ratio    = sum(pt.ph_frac_wt[id_ph]) / sum(pt.ph_frac[id_ph])   # MM_phase / MM_system
-                                excess_calc      = excess_mol_frac * wt_frac_ratio
-                                removed_contrib  = excess_calc .* comp_avg_wt
-                            else
-                                excess_calc      = excess_mol_frac
-                                removed_contrib  = excess_mol_frac .* comp_avg
+                                comps    = [ i_ph <= n_SS ? pt.SS_vec[i_ph].Comp : pt.PP_vec[i_ph - n_SS].Comp for i_ph in id_ph ]
+                                comp_avg = sum(comps) ./ length(comps)   # simple average across solvus instances
+
+                                bulk             .-= excess_mol_frac .* comp_avg
+                                bulk[bulk .< 0.0] .= 0.0
+                                bulk            ./= sum(bulk)
+
+                                # removedBulk/fracEvol are tracked in `calcUnit` basis (mol
+                                # or wt) throughout the rest of this function; convert this
+                                # mol-basis excess the same way, reusing the molar-mass
+                                # ratio trick already used for the trace-element fix (this
+                                # phase's own mol vs wt fraction gives exactly that ratio),
+                                # and MAGEMin's own already-fraction-scaled Comp_wt fields
+                                # for the composition shape -- NOT the mol2wt()/wt2mol()
+                                # utility functions, which are percent-scaled (sum to 100,
+                                # for user-facing bulk-rock display) rather than fraction-
+                                # scaled (sum to 1), unlike every native gmin_struct field.
+                                if calcUnit == "wt"
+                                    comps_wt         = [ i_ph <= n_SS ? pt.SS_vec[i_ph].Comp_wt : pt.PP_vec[i_ph - n_SS].Comp_wt for i_ph in id_ph ]
+                                    comp_avg_wt      = sum(comps_wt) ./ length(comps_wt)
+                                    wt_frac_ratio    = sum(pt.ph_frac_wt[id_ph]) / sum(pt.ph_frac[id_ph])   # MM_phase / MM_system
+                                    excess_calc      = excess_mol_frac * wt_frac_ratio
+                                    removed_contrib  = excess_calc .* comp_avg_wt
+                                else
+                                    excess_calc      = excess_mol_frac
+                                    removed_contrib  = excess_mol_frac .* comp_avg
+                                end
+
+                                combined_extra_shape .+= removed_contrib
+                                total_excess_calc     += excess_calc
                             end
-
-                            combined_extra_shape .+= removed_contrib
-                            total_excess_calc     += excess_calc
                         end
 
                         if total_excess_calc > 0.0
