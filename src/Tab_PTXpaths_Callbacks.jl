@@ -1924,7 +1924,7 @@ function Tab_PTXpaths_Callbacks(app)
             splits, splits_full = fam[2][1], fam[2][2]
             for (k, s) in enumerate(splits)
                 (s == i || s in adv_seen) && continue
-                push!(adv_phase_options, Dict("label" => "     ↳ "*splits_full[k]*" ($s)", "value" => s))
+                push!(adv_phase_options, Dict("label" => "     ↳ "*display_ph_name(s)*" ("*splits_full[k]*")", "value" => s))
                 push!(adv_seen, s)
             end
         end
