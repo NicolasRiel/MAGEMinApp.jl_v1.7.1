@@ -200,13 +200,13 @@ function get_dtbulk_list()
                             ), cols=:union)
 
 
-    # push!(dba,Dict(         :database    => "Ghiorso & (xxxx)",
-    #                         :acronym     => "pMELTS",
-    #                         ), cols=:union)
+    push!(dba,Dict(         :database    => "Ghiorso & (xxxx)",
+                            :acronym     => "pMELTS",
+                            ), cols=:union)
 
-    # push!(dba,Dict(         :database    => "Ghiorso & (yyyy)",
-    #                         :acronym     => "rMELTS",
-    #                         ), cols=:union)
+    push!(dba,Dict(         :database    => "Ghiorso & (yyyy)",
+                            :acronym     => "rMELTS",
+                            ), cols=:union)
 
     # push!(dba,Dict(         :database    => "Calc-shist (Stuck et al., 2026)",
     #                         :acronym     => "cs",
@@ -1099,6 +1099,19 @@ function get_dtbulk_list()
                             :frac       => [ 50.72,	9.16,15.21, 16.25,	7.06, 0.01, 1.47, 0.39, 0.35,  0.01, 0.0, 0.0, 0.0, 0.0],
                             :frac2      => [ 50.72,	9.16,15.21, 16.25,	7.06, 0.01, 1.47, 0.39, 0.35,  0.01, 0.0, 0.0, 0.0, 0.0],
                             ), cols=:union)
+
+    # calc-schist
+    # push!(db,Dict(          :bulk       => "predefined",
+    #                         :title      => "N_MORB - Basalt",
+    #                         :comments   => "Gale et al., 2013",
+    #                         :db         => "cs",
+    #                         :test       => 0,
+    #                         :sysUnit    => "mol",
+    #                         :oxide      => ["SiO2","Al2O3","CaO","MgO","FeO","K2O","Na2O","TiO2","O","Cr2O3","H2O","CO2"],
+    #                         :frac       => [53.21,	9.41,	12.21,	12.21,	8.65,	0.09,	2.90,1.21,0.69,0.02, 5.0,2.0],
+    #                         :frac2      => [53.21,	9.41,	12.21,	12.21,	8.65,	0.09,	2.90,1.21,0.69,0.02, 5.0,2.0],
+    #                         ), cols=:union)
+                
                             
 
     dbte = DataFrame(       composition = String[],
