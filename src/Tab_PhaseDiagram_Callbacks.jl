@@ -2253,7 +2253,7 @@ function Tab_PhaseDiagram_Callbacks(app)
         try
             _, content_string = split(contents, ',')
             decoded    = base64decode(content_string)
-            input      = String(decoded)
+            input      = strip_bom(String(decoded))
             first_line = split(input, '\n')[findfirst(l -> !isempty(strip(l)) && !startswith(strip(l), '#'), split(input, '\n'))]
             delim = occursin(';', first_line) ? ';' : ','
             raw   = strip.(string.(readdlm(IOBuffer(input), delim, comments=true, comment_char='#')))
