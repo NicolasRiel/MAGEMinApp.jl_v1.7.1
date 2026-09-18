@@ -56,6 +56,13 @@ function Tab_IntersecT()
                                     target = "run-intersect-ix-wrapper",
                                 ),
                             ]),
+                            dbc_row([
+                                dbc_switch(
+                                    label = "Keep (accumulate runs for comparison, up to $(MAX_KEPT_RUNS))",
+                                    id    = "keep-checkbox-ix",
+                                    value = false,
+                                ),
+                            ]),
                             html_div("‎ "),
 
                             # Measurement file upload
@@ -313,6 +320,47 @@ function Tab_IntersecT()
                                     dcc_markdown(
                                         id       = "log-markdown-ix",
                                         children = "Run calculation first",
+                                        style    = Dict("white-space" => "pre-wrap", "font-size" => "100%"),
+                                    ),
+                                ]),
+                                dbc_tab(label="Kept runs", children=[
+                                    html_div("‎ "),
+                                    html_div(id="kept-runs-summary-ix", children="*No kept runs yet.*"),
+                                    html_div("‎ "),
+                                    dbc_row([
+                                        dbc_col([
+                                            dcc_dropdown(
+                                                id          = "kept-runs-select-ix",
+                                                options     = [],
+                                                value       = nothing,
+                                                clearable   = false,
+                                                placeholder = "No kept runs yet",
+                                            ),
+                                        ], width=8),
+                                        dbc_col([
+                                            dbc_button("Remove selected", id="button-remove-kept-ix",
+                                                color="light", n_clicks=0,
+                                                style=Dict("width"=>"100%", "border"=>"1px grey solid")),
+                                        ], width=2),
+                                        dbc_col([
+                                            dbc_button("Remove all", id="button-remove-all-kept-ix",
+                                                color="light", n_clicks=0,
+                                                style=Dict("width"=>"100%", "border"=>"1px grey solid")),
+                                        ], width=2),
+                                    ]),
+                                    html_div("‎ "),
+                                    dbc_alert(
+                                        "",
+                                        id       = "kept-run-mismatch-alert-ix",
+                                        is_open  = false,
+                                        color    = "warning",
+                                    ),
+                                    dcc_markdown(id="kept-run-meta-ix", children=""),
+                                    dcc_graph(id="kept-run-graph-ix", figure=Dict()),
+                                    html_hr(),
+                                    dcc_markdown(
+                                        id       = "kept-run-log-ix",
+                                        children = "",
                                         style    = Dict("white-space" => "pre-wrap", "font-size" => "100%"),
                                     ),
                                 ]),
@@ -866,6 +914,10 @@ function Tab_IntersecT()
         dcc_store(id="intersect-run-store-ix", data=0),
         # Hidden store: incremented whenever isopleths change, to trigger diagram/caption re-render.
         dcc_store(id="ix-iso-store-ix", data=0),
+        # Hidden store: incremented when a kept run is pushed (Run + Keep checked).
+        dcc_store(id="kept-runs-trigger-ix", data=0),
+        # Hidden store: incremented on remove-selected/remove-all/new-measurement-upload.
+        dcc_store(id="kept-runs-manage-trigger-ix", data=0),
 
     ])
 end
