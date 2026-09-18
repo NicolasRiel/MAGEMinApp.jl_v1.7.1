@@ -167,11 +167,13 @@ function Tab_General_informations()
                                     Dict("id" =>  "solvus",     "name" =>  "solvus",            "editable" => false)
                                 ]
                     ),
-                    data        =   [Dict(  "ss"         => AppData.dict_ss[i][1],
+                    data        =   [Dict(  "ss"         => (n = AppData.dict_ss[i][1]; isempty(n) ? "-" : n),
                                             "ss_abrev"   => i,
                                             "warr"       => (w = MAGEMin_C.get_Warr_name(i); endswith(w, "*") ? "-" : w),
-                                            "solvus"     => join(map((x, y) -> "$x, $y", AppData.dict_ss[i][2][2], AppData.dict_ss[i][2][1]), "; ") )
-                                                for i in keys(AppData.dict_ss) ],
+                                            "solvus"     => (f = AppData.dict_ss[i][2][1];
+                                                             f == [i] ? "-" :
+                                                             join(map((x, y) -> "$x, $y", AppData.dict_ss[i][2][2], f), "; ")) )
+                                                for i in sort(collect(keys(AppData.dict_ss))) ],
 
                     style_cell  = (textAlign="center", fontSize="120%",),
                     style_header= (fontWeight="bold",),
@@ -195,7 +197,7 @@ function Tab_General_informations()
                                             "em_abrev"   => i,
                                             "warr"       => (w = MAGEMin_C.get_Warr_name(i); endswith(w, "*") ? "-" : w),
                                             "compo"      => join(vcat(AppData.dict_em[i][3]...),", ") )
-                                                for i in keys(AppData.dict_em) if i != "_header-"],
+                                                for i in sort(collect(keys(AppData.dict_em))) if !startswith(i, "_")],
 
                     style_cell  = (textAlign="center", fontSize="120%",),
                     style_header= (fontWeight="bold",),

@@ -82,71 +82,34 @@ function preset_ss_selection(preset::String, available::Vector{String})
     return intersect(get(TC_PRESET_PHASES, preset, String[]), available)
 end
 
+"""
+    preset_pp_selection(preset, available)
+
+    Pure phases a preset keeps active: those the preset's own database defines, intersected
+    with what the current database offers. Unlike `TC_PRESET_PHASES`, which is curated (it
+    omits phases on purpose and picks the `fsp_H22op` feldspar for igd), this is read
+    straight from the library - a pure phase belongs to a preset exactly when that database
+    has it.
+
+    Without this, a preset restricted only the solution phases and left every pure phase
+    selected, so oxides no phase of the preset can host still looked covered: picking the
+    "igd" preset in the "all" database left `law`, `H2O`, `zo`, `prl`, `mpm` and `pre`
+    active, and `bulk_oxide_coverage_status` reported H2O as covered although igd has no
+    H2O in its oxide set at all.
+"""
+function preset_pp_selection(preset::String, available::Vector{String})
+    is_db(preset) || return available
+    return intersect(available, retrieve_solution_phase_information(preset).data_pp)
+end
+
 function display_ph_names_tagged(names::Vector{String}, dtb::String)
     lookup = ss_fname_lookup(dtb)
     return [display_ph_name_tagged(n, lookup) for n in names]
 end
 
-const ALL_DB_OXIDES = ["SiO2", "Al2O3", "CaO", "MgO", "FeO", "K2O", "Na2O", "TiO2", "O", "MnO", "Cr2O3", "H2O", "CO2", "S"]
-
-const _all_db_oxide_support = Ref{Union{Nothing,Dict{String,Set{String}}}}(nothing)
-
-function compute_all_db_oxide_support()
-    n_ox = length(ALL_DB_OXIDES)
-    data = Initialize_MAGEMin("all", verbose=false)
-    gv, z_b, DB, splx_data = data.gv[1], data.z_b[1], data.DB[1], data.splx_data[1]
-
-    gv = define_bulk_rock(gv, fill(1.0, n_ox), ALL_DB_OXIDES, "mol", "all")
-    z_b.T = 900.0 + 273.15
-    z_b.P = 10.0
-    gv.numPoint = 1
-    gv  = LibMAGEMin.reset_gv(gv, z_b, DB.PP_ref_db, DB.SS_ref_db)
-    z_b = LibMAGEMin.reset_z_b_bulk(gv, z_b)
-    LibMAGEMin.reset_simplex_A(pointer_from_objref(splx_data), z_b, gv)
-    LibMAGEMin.reset_simplex_B_em(pointer_from_objref(splx_data), gv)
-    LibMAGEMin.reset_cp(gv, z_b, DB.cp)
-    LibMAGEMin.reset_SS(gv, z_b, DB.SS_ref_db)
-    LibMAGEMin.reset_sp(gv, DB.sp)
-    gv = LibMAGEMin.ComputeG0_point(gv.EM_database, z_b, gv, DB.PP_ref_db, DB.SS_ref_db)
-
-    ss_names = unsafe_string.(unsafe_wrap(Vector{Ptr{Int8}}, gv.SS_list, gv.len_ss))
-    pp_names = unsafe_string.(unsafe_wrap(Vector{Ptr{Int8}}, gv.PP_list, gv.len_pp))
-
-    support = Dict{String,Set{String}}()
-
-    for (i, name) in enumerate(ss_names)
-        ss_ref  = unsafe_load(DB.SS_ref_db, i)
-        em_ptrs = unsafe_wrap(Vector{Ptr{Cdouble}}, ss_ref.Comp, ss_ref.n_em)
-        oxides  = Set{String}()
-        for em_i in 1:ss_ref.n_em
-            comp = unsafe_wrap(Vector{Cdouble}, em_ptrs[em_i], n_ox)
-            for k in 1:n_ox
-                abs(comp[k]) > 1e-8 && push!(oxides, ALL_DB_OXIDES[k])
-            end
-        end
-        support[name] = oxides
-    end
-
-    for (i, name) in enumerate(pp_names)
-        pp_ref = unsafe_load(DB.PP_ref_db, i)
-        oxides = Set{String}()
-        for k in 1:n_ox
-            abs(pp_ref.Comp[k]) > 1e-8 && push!(oxides, ALL_DB_OXIDES[k])
-        end
-        support[name] = oxides
-    end
-
-    Finalize_MAGEMin(data)
-    return support
-end
-
-function all_db_oxide_support()
-    isnothing(_all_db_oxide_support[]) && (_all_db_oxide_support[] = compute_all_db_oxide_support())
-    return _all_db_oxide_support[]
-end
 
 function bulk_oxide_coverage_status(bulk_data, ss_selected, pp_selected)
-    support = all_db_oxide_support()
+    support = get_phase_oxide_support("all")
 
     needed = String[]
     for row in bulk_data
@@ -2344,56 +2307,6 @@ function get_property(x, name::String)
 end
 
 
-"""
-    Function to send back the oxide list of the implemented database
-"""
-function get_oxide_list(dbin::String)
-
-    if dbin == "ig"
-	    MAGEMin_ox      = ["SiO2"; "Al2O3"; "CaO"; "MgO"; "FeO"; "K2O"; "Na2O"; "TiO2"; "O"; "Cr2O3"; "H2O"];
-    elseif dbin == "igd"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "CaO"; "MgO"; "FeO"; "K2O"; "Na2O"; "TiO2"; "O"; "Cr2O3"]; 
-    elseif dbin == "igad"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "CaO"; "MgO"; "FeO"; "K2O"; "Na2O"; "TiO2"; "O"; "Cr2O3"];        
-    elseif dbin == "igm"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "CaO"; "MgO"; "FeO"; "K2O"; "Na2O"; "TiO2"; "O"; "Cr2O3"];   
-    elseif dbin == "mb"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "CaO"; "MgO"; "FeO"; "K2O"; "Na2O"; "TiO2"; "O"; "H2O"];     
-    elseif dbin == "mbe"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "CaO"; "MgO"; "FeO"; "K2O"; "Na2O"; "TiO2"; "O"; "H2O"];     
-    elseif dbin == "um"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "MgO" ;"FeO"; "O"; "H2O"; "S"];
-    elseif dbin == "ume"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "MgO" ;"FeO"; "O"; "H2O"; "S"; "CaO"; "Na2O";"Cr2O3"];        
-    elseif dbin == "mp"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "CaO"; "MgO"; "FeO"; "K2O"; "Na2O"; "TiO2"; "O"; "MnO"; "H2O"];
-    elseif dbin == "mtl"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "CaO"; "MgO"; "FeO";"Na2O"]; 
-    elseif dbin == "mpe"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "CaO"; "MgO"; "FeO"; "K2O"; "Na2O"; "TiO2"; "O"; "MnO"; "H2O"; "CO2"; "S"];
-    elseif dbin == "all"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "CaO"; "MgO"; "FeO"; "K2O"; "Na2O"; "TiO2"; "O"; "MnO"; "Cr2O3"; "H2O"; "CO2"; "S"];
-    elseif dbin == "cs"
-	    MAGEMin_ox      = ["SiO2"; "Al2O3"; "CaO"; "MgO"; "FeO"; "K2O"; "Na2O"; "TiO2"; "O"; "Cr2O3"; "H2O"; "CO2"];
-    elseif dbin == "sb11"
-        MAGEMin_ox      = ["SiO2"; "CaO"; "Al2O3"; "FeO"; "MgO"; "Na2O"]; 
-    elseif dbin == "sb21"
-        MAGEMin_ox      = ["SiO2"; "CaO"; "Al2O3";"FeO"; "MgO"; "Na2O"]; 
-    elseif dbin == "sb24"
-        MAGEMin_ox      = ["SiO2"; "CaO"; "Al2O3"; "MgO"; "Na2O"; "O"; "Cr2O3"; "Fe"]; 
-    elseif dbin == "rMELTS"
-        MAGEMin_ox      = ["SiO2";"Al2O3";"CaO";"MgO";"FeO";"K2O";"Na2O";"TiO2";"O";"MnO"; "Cr2O3";"H2O";"CO2"]; 
-    elseif dbin == "pMELTS"
-        MAGEMin_ox      = ["SiO2";"Al2O3";"CaO";"MgO";"FeO";"K2O";"Na2O";"TiO2";"O";"MnO"; "Cr2O3";"H2O"];
-    elseif dbin == "po"
-        MAGEMin_ox      = ["SiO2"; "Al2O3"; "MgO"; "FeO"; "K2O"; "Na2O"; "H2O"; "CaO"; "TiO2"; "O"];
-    else
-        print("Database not implemented... $dbin (get_oxide_list)\n")
-    end
-
-
-    return MAGEMin_ox
-end
 
 """
     function to parse bulk-rock composition file
@@ -2532,12 +2445,11 @@ function bulk_csv_to_db(datain)
         dbin     = lowercase(strip(string(datain[i, idx_db])))
         sysUnit  = lowercase(strip(string(datain[i, idx_sysUnit])))
 
-        valid_db      = ("ig","igd","igm","igad","mb","mbe","um","ume","mp","mtl","mpe","all","cs","sb11","sb21","sb24","rMELTS","pMELTS","po")
         valid_sysunit = ("mol","wt")
 
-        if dbin ∉ valid_db
+        if !is_db(dbin) && !(dbin in DB_STAGED)
             error("Row $i ('$title'): unknown database '$dbin'. " *
-                  "Valid acronyms: $(join(valid_db, ", "))")
+                  "Valid acronyms: $(join(vcat(get_db_list(), collect(DB_STAGED)), ", "))")
         end
         if sysUnit ∉ valid_sysunit
             error("Row $i ('$title'): invalid sysUnit '$sysUnit'. Must be 'mol' or 'wt'")

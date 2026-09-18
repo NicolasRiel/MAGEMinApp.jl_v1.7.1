@@ -129,7 +129,7 @@ function add_ix_isopleth(phase_name, element_name, minIso, stepIso, maxIso,
     global Out_XY
     (!@isdefined(Out_XY) || isnothing(Out_XY) || isempty(Out_XY)) && return [], []
     field = _get_apfu_field(phase_name, element_name)
-    return _add_ix_iso_from_field(field, "$(phase_name) $(element_name)",
+    return _add_ix_iso_from_field(field, "$(_display_ix_token(phase_name)) $(element_name)",
                                    minIso, stepIso, maxIso,
                                    isoColorLine, isoLineStyle, isoLineWidth, isoLabelSize)
 end
@@ -204,21 +204,223 @@ function remove_all_ix_isopleths()
 end
 
 # ────────────────────────────────────────────────────────────────────────────
+# "Keep" — accumulated IntersecT run snapshots for side-by-side comparison
+#
+# Only the Qcmp_weighted figure is pre-rendered per kept run (baked from the
+# live AMR grid at keep-time, so it stays valid after the grid is reset by a
+# new phase-diagram computation). Per-phase/per-element breakdown is shown as
+# text via `intersect_log_markdown`, derived fresh from the stored
+# `IntersecTResult` each time — that struct is grid-independent (small
+# per-grid-point vectors/matrices, no reference to `data`/`Out_XY`), so unlike
+# the figure it never goes stale and needs no snapshotting.
+# ────────────────────────────────────────────────────────────────────────────
+
+const MAX_KEPT_RUNS = 8
+
+struct IntersectRunSnapshot
+    label          :: String
+    result         :: Any            # IntersecT.IntersecTResult
+    figure         :: Any            # pre-rendered Qcmp_weighted Plotly figure
+    selected       :: Vector{String} # Phase::Domain keys used for this run
+    diagram_info   :: Vector{String} # PT_infos snapshot (label/value HTML text)
+    diagram_Xrange :: Vector{Float64}
+    diagram_Yrange :: Vector{Float64}
+    timestamp      :: DateTime
+end
+
+global kept_intersect_runs = IntersectRunSnapshot[]
+
+function _clear_kept_runs!()
+    global kept_intersect_runs
+    empty!(kept_intersect_runs)
+end
+
+function _push_kept_run!(snap::IntersectRunSnapshot)
+    global kept_intersect_runs
+    push!(kept_intersect_runs, snap)
+    while length(kept_intersect_runs) > MAX_KEPT_RUNS
+        popfirst!(kept_intersect_runs)
+    end
+end
+
+"""
+Build a kept-run snapshot from a just-computed IntersecT result. Renders the
+Qcmp_weighted figure immediately (while the live `data`/AMR-grid globals still
+match this result) using the current display style so the snapshot matches
+what's on screen.
+"""
+function _build_kept_run_snapshot(result, selected_phases::AbstractVector;
+    colormap, set_min_white, reverse_cmap, smooth_cmap, show_full_grid, show_lbl, show_grid,
+)::IntersectRunSnapshot
+    global PT_infos, data, kept_intersect_runs
+
+    fig, _cfg = _render_intersect_figure(result, "Qcmp_weighted";
+        colormap       = colormap,
+        set_min_white  = set_min_white,
+        reverse_cmap   = reverse_cmap,
+        smooth_cmap    = smooth_cmap,
+        show_full_grid = show_full_grid,
+        show_lbl       = show_lbl,
+        show_grid      = show_grid,
+    )
+
+    label = "Run $(length(kept_intersect_runs) + 1) — $(join(_display_ix_token.(selected_phases), ", "))"
+
+    info_text = (@isdefined(PT_infos) && !isnothing(PT_infos)) ? copy(PT_infos) : ["", ""]
+    Xr = (@isdefined(data) && !isnothing(data)) ? copy(data.Xrange) : Float64[]
+    Yr = (@isdefined(data) && !isnothing(data)) ? copy(data.Yrange) : Float64[]
+
+    return IntersectRunSnapshot(label, result, fig, String.(selected_phases), info_text, Xr, Yr, Dates.now())
+end
+
+"""
+Warning message if `snap`'s diagram (database/type/bulk/buffer/axes) differs
+from the immediately preceding kept run, or "" if there is nothing to compare
+against or nothing differs.
+"""
+function _kept_run_mismatch_message(idx::Int)::String
+    global kept_intersect_runs
+    idx <= 1 && return ""
+    prev = kept_intersect_runs[idx-1]
+    cur  = kept_intersect_runs[idx]
+    (cur.diagram_info == prev.diagram_info &&
+     cur.diagram_Xrange == prev.diagram_Xrange &&
+     cur.diagram_Yrange == prev.diagram_Yrange) && return ""
+    return "Diagram setup differs from the previous kept run (\"$(prev.label)\") — " *
+           "database, diagram type, bulk composition, buffer, or axes range may not match."
+end
+
+"""
+Render a snapshot's stored `PT_infos`-style [labels, values] pair (each a
+single "<br>"-joined HTML string, as built by `get_phase_diagram_information`)
+as a plain "Label: Value" markdown block.
+"""
+function _diagram_info_markdown(info_text::Vector{String})::String
+    length(info_text) == 2 || return ""
+    labels = split(replace(info_text[1], "<br>" => "\n"), "\n")
+    values = split(replace(info_text[2], "<br>" => "\n"), "\n")
+    n = min(length(labels), length(values))
+    lines = String[]
+    for i in 1:n
+        lbl = strip(replace(labels[i], "‾" => ""))
+        val = strip(values[i])
+        (isempty(lbl) || isempty(val) || occursin("___", lbl)) && continue
+        push!(lines, "$(lbl): $(val)")
+    end
+    return join(lines, "  \n")
+end
+
+"""
+Markdown table summarizing all kept runs' weighted/unweighted Qcmp and
+red-chi2 best-fit values side by side.
+"""
+function _kept_runs_summary_markdown()::String
+    global kept_intersect_runs
+    isempty(kept_intersect_runs) && return "*No kept runs yet.*"
+
+    header = "| # | Run | Qcmp weighted (max) | Qcmp unweighted (max) | redchi² total (min) |\n" *
+             "|---|-----|----------------------|------------------------|----------------------|\n"
+    rows = String[]
+    for (i, snap) in enumerate(kept_intersect_runs)
+        log = IntersecT.generate_log(snap.result)
+        push!(rows, "| $(i) | $(snap.label) | $(round(log.Qcmp_weighted_max, digits=2)) | " *
+                     "$(round(log.Qcmp_unweighted_max, digits=2)) | $(round(log.redchi2_tot_min, digits=3)) |")
+    end
+    return header * join(rows, "\n")
+end
+
+# ────────────────────────────────────────────────────────────────────────────
 # Internal helpers
 # ────────────────────────────────────────────────────────────────────────────
 
 """
+Return `true` if every non-empty cell in `cells` parses as a real number.
+Used to tell an optional domain-mapping row (e.g. "core", "rim", "") apart from
+a genuine numeric data row.
+"""
+function _is_numeric_row(cells)::Bool
+    for c in cells
+        s = strip(String(c))
+        isempty(s) && continue
+        isnothing(tryparse(Float64, s)) && return false
+    end
+    return true
+end
+
+"""
+Insert a domain label into a "Phase_Element" header, producing "Phase::Domain_Element".
+Empty/blank domain, or a header without an underscore (e.g. a bare "T"/"P" column),
+is returned unchanged.
+"""
+function _apply_domain_suffix(header::AbstractString, domain)::String
+    dom = strip(String(domain))
+    isempty(dom) && return String(header)
+    parts = split(header, '_'; limit=2)
+    length(parts) == 2 || return String(header)
+    return "$(parts[1])::$(dom)_$(parts[2])"
+end
+
+"""
+Base phase name with any "::Domain" suffix stripped, e.g. "Grt::core" -> "Grt".
+Names without a domain suffix are returned unchanged.
+"""
+function _base_phase(name::AbstractString)::String
+    return String(split(name, "::"; limit=2)[1])
+end
+
+"""
+Human-readable form of a possibly domain-suffixed phase/column token, e.g.
+"Grt::core" -> "Grt core". Used only for display (labels, logs) — never for
+matching/lookup, which must use the "::"-delimited form.
+"""
+function _display_ix_token(name::AbstractString)::String
+    return replace(String(name), "::" => " ")
+end
+
+"""
 Decode a Dash dcc_upload `contents` string (base64) and return a parsed DataFrame.
+
+Supports an optional domain-mapping row directly below the header, e.g.:
+
+    Grt_Mg, Grt_Fe, Grt_Mg, Grt_Fe, Bt_Mg
+    core,   core,   rim,    rim,    ""
+    0.30,   2.10,   0.55,   1.90,   1.20
+    ...
+
+Empty cells mean "no domain". If that row is fully numeric instead, it is
+treated as ordinary data and the file is read exactly as before (existing
+files keep working unchanged). Column names with a domain are rewritten to
+"Phase::Domain_Element" so every existing "Phase_Element" parser downstream
+(here and in the IntersecT.jl package) keeps working unmodified — domain
+becomes part of the phase token rather than a new one.
 """
 function _parse_measurements_upload(contents::String)::DataFrame
     _, content_string = split(contents, ','; limit=2)
     decoded = base64decode(content_string)
     input   = String(decoded)
-    return CSV.read(IOBuffer(input), DataFrame; header=true)
+
+    raw = CSV.read(IOBuffer(input), DataFrame; header=false, types=String, silencewarnings=true)
+    nrow(raw) >= 2 || error("Measurement file must have a header row and at least one data row")
+
+    header_row = [strip(String(coalesce(v, ""))) for v in Vector(raw[1, :])]
+    second_row = [String(coalesce(v, "")) for v in Vector(raw[2, :])]
+
+    if _is_numeric_row(second_row)
+        col_names     = header_row
+        data_start_ln = 2
+    else
+        col_names     = [_apply_domain_suffix(header_row[i], second_row[i]) for i in eachindex(header_row)]
+        data_start_ln = 3
+    end
+
+    df = CSV.read(IOBuffer(input), DataFrame; header=false, skipto=data_start_ln, silencewarnings=true)
+    rename!(df, Symbol.(col_names))
+    return df
 end
 
 """
-Extract unique phase names from IntersecT-style column headers ("Phase_Element").
+Extract unique phase (or "Phase::Domain") tokens from IntersecT-style column
+headers ("Phase_Element" or "Phase::Domain_Element").
 """
 function _phases_from_headers(df::DataFrame)::Vector{String}
     seen   = Set{String}()
@@ -249,8 +451,9 @@ function _build_field_options(result)::Vector{Dict{String,String}}
 
     # Per-phase fields
     for (p, ph) in enumerate(result.phase_names)
-        push!(opts, Dict("label" => "Qcmp $(ph)",     "value" => "Qcmp_phase_$(p)"))
-        push!(opts, Dict("label" => "redchi2 $(ph)",  "value" => "redchi2_phase_$(p)"))
+        label = _display_ix_token(ph)
+        push!(opts, Dict("label" => "Qcmp $(label)",     "value" => "Qcmp_phase_$(p)"))
+        push!(opts, Dict("label" => "redchi2 $(label)",  "value" => "redchi2_phase_$(p)"))
     end
 
     # Per-element fields
@@ -297,10 +500,10 @@ function _field_label(result, value::String)::String
         return "redchi² total"
     elseif startswith(value, "Qcmp_phase_")
         p = parse(Int, value[length("Qcmp_phase_")+1:end])
-        return "Q*cmp $(result.phase_names[p])"
+        return "Q*cmp $(_display_ix_token(result.phase_names[p]))"
     elseif startswith(value, "redchi2_phase_")
         p = parse(Int, value[length("redchi2_phase_")+1:end])
-        return "redchi² $(result.phase_names[p])"
+        return "redchi² $(_display_ix_token(result.phase_names[p]))"
     elseif startswith(value, "Qcmp_elem_")
         j = parse(Int, value[length("Qcmp_elem_")+1:end])
         return "Q*cmp $(result.element_names[j])"
@@ -331,13 +534,17 @@ function _get_apfu_field(phase_name::String, element_name::String)::Vector{Float
     haskey(elem_to_ox_idx, element_name) || return fill(NaN, length(data.points))
     ox_idx = elem_to_ox_idx[element_name]
 
+    # phase_name may carry a domain suffix ("Grt::core"); domains don't exist
+    # on the calculated side, so match against the base phase.
+    base_name = _base_phase(phase_name)
+
     np     = length(data.points)
     values = fill(NaN, np)
     for i in 1:min(np, length(Out_XY))
         ph_list = Out_XY[i].ph
         n_SS    = Out_XY[i].n_SS
         idx = findfirst(k -> k ≤ n_SS &&
-                        display_ph_name(String(ph_list[k])) == phase_name,
+                        display_ph_name(String(ph_list[k])) == base_name,
                         1:n_SS)
         isnothing(idx) && continue
         apfu = Out_XY[i].SS_vec[idx].Comp_apfu
@@ -712,21 +919,26 @@ function Tab_IntersecT_Callbacks(app)
             df = _parse_measurements_upload(contents)
             global measurements_ix = df
 
-            meas_phases = _phases_from_headers(df)
+            # meas_phases may contain domain-suffixed tokens ("Grt::core"); the
+            # calculated side (raw_phases) never has domains, so matching
+            # against it must go through the base phase name.
+            meas_phases      = _phases_from_headers(df)
+            meas_base_phases = unique(_base_phase.(meas_phases))
 
             raw_phases = (@isdefined(Out_XY) && !isnothing(Out_XY) && length(Out_XY) > 0) ?
-                list_intersect_phases(Out_XY) : meas_phases
+                list_intersect_phases(Out_XY) : meas_base_phases
 
-            all_phases   = [display_ph_name(ph) for ph in raw_phases]
-            intersection = filter(ph -> ph in meas_phases, all_phases)
-            options      = [Dict("label" => " "*ph, "value" => ph) for ph in intersection]
+            all_base_phases      = [display_ph_name(ph) for ph in raw_phases]
+            base_intersection    = filter(ph -> ph in meas_base_phases, all_base_phases)
+            intersection         = filter(ph -> _base_phase(ph) in base_intersection, meas_phases)
+            options      = [Dict("label" => " "*_display_ix_token(ph), "value" => ph) for ph in intersection]
             preselected  = intersection
 
             n_elem     = ncol(df)
             meas_str   = join(names(df), ", ")
-            status_msg = "**$(filename)**\n\n$(n_elem) measurements: $(meas_str)\n\nPhases found: $(join(meas_phases, ", "))"
+            status_msg = "**$(filename)**\n\n$(n_elem) measurements: $(meas_str)\n\nPhases found: $(join(_display_ix_token.(meas_phases), ", "))"
 
-            iso_opts = [Dict("label" => ph, "value" => ph) for ph in meas_phases]
+            iso_opts = [Dict("label" => _display_ix_token(ph), "value" => ph) for ph in meas_phases]
             iso_val  = isempty(meas_phases) ? nothing : meas_phases[1]
 
             return options, preselected, status_msg, iso_opts, iso_val
@@ -765,11 +977,22 @@ function Tab_IntersecT_Callbacks(app)
         Output("field-dropdown-ix-2",     "value"),
         Output("intersect-run-store-ix",  "data"),
         Output("log-markdown-ix",         "children"),
+        Output("kept-runs-trigger-ix",    "data"),
         Input("run-intersect-ix",         "n_clicks"),
         State("phase-checklist-ix",       "value"),
         State("analysis-type-ix",         "value"),
+        State("keep-checkbox-ix",         "value"),
+        State("kept-runs-trigger-ix",     "data"),
+        State("colormaps-ix",             "value"),
+        State("set-min-white-ix",         "value"),
+        State("reverse-colormap-ix",      "value"),
+        State("smooth-colormap-ix",       "value"),
+        State("show-full-grid-ix",        "value"),
+        State("show-lbl-ix",              "value"),
+        State("show-grid-ix",             "value"),
         prevent_initial_call = true,
-    ) do n_clicks, selected_phases, analysis_type
+    ) do n_clicks, selected_phases, analysis_type, keep_on, kept_trigger,
+        colormap, set_min_white, reverse_cmap, smooth_cmap, show_full_grid, show_lbl, show_grid
 
         global Out_XY, measurements_ix, Out_intersect
 
@@ -777,17 +1000,17 @@ function Tab_IntersecT_Callbacks(app)
         if !(@isdefined(Out_XY)) || isnothing(Out_XY) || length(Out_XY) == 0
             return [], nothing, true,
                    "No phase diagram found. Compute a PT diagram first.", "danger",
-                   [], nothing, [], nothing, n_clicks, no_update()
+                   [], nothing, [], nothing, n_clicks, no_update(), no_update()
         end
         if isnothing(measurements_ix)
             return [], nothing, true,
                    "No measurement file loaded. Upload a CSV first.", "danger",
-                   [], nothing, [], nothing, n_clicks, no_update()
+                   [], nothing, [], nothing, n_clicks, no_update(), no_update()
         end
         if isnothing(selected_phases) || length(selected_phases) == 0
             return [], nothing, true,
                    "No phases selected. Check at least one phase in the checklist.", "warning",
-                   [], nothing, [], nothing, n_clicks, no_update()
+                   [], nothing, [], nothing, n_clicks, no_update(), no_update()
         end
 
         try
@@ -800,7 +1023,7 @@ function Tab_IntersecT_Callbacks(app)
             if isempty(phase_elements)
                 return [], nothing, true,
                        "No matching Phase_Element columns found for the selected phases.", "danger",
-                       [], nothing, [], nothing, n_clicks, no_update()
+                       [], nothing, [], nothing, n_clicks, no_update(), no_update()
             end
 
             # y_col must not contain "kbar": IntersecT auto-converts any such column
@@ -831,13 +1054,110 @@ function Tab_IntersecT_Callbacks(app)
             default = "Qcmp_weighted"
             log_md  = intersect_log_markdown(result)
 
+            kept_out = no_update()
+            if keep_on == true
+                snap = _build_kept_run_snapshot(result, selected_phases;
+                    colormap       = colormap,
+                    set_min_white  = set_min_white,
+                    reverse_cmap   = reverse_cmap,
+                    smooth_cmap    = smooth_cmap,
+                    show_full_grid = show_full_grid,
+                    show_lbl       = show_lbl,
+                    show_grid      = show_grid,
+                )
+                _push_kept_run!(snap)
+                kept_out = something(kept_trigger, 0) + 1
+            end
+
             return opts, default, false, "", "danger",
-                   opts, default, opts, default, n_clicks, log_md
+                   opts, default, opts, default, n_clicks, log_md, kept_out
 
         catch e
             return [], nothing, true, sprint(showerror, e), "danger",
-                   [], nothing, [], nothing, n_clicks, no_update()
+                   [], nothing, [], nothing, n_clicks, no_update(), no_update()
         end
+    end
+
+    # ── Callback 4b: Manage kept runs (remove selected/all, clear on new upload) ─
+    callback!(
+        app,
+        Output("kept-runs-manage-trigger-ix", "data"),
+        Input("button-remove-kept-ix",        "n_clicks"),
+        Input("button-remove-all-kept-ix",    "n_clicks"),
+        Input("upload-measurements-ix",       "contents"),
+        State("kept-runs-select-ix",          "value"),
+        State("kept-runs-manage-trigger-ix",  "data"),
+        prevent_initial_call = true,
+    ) do _, _, _, selected_idx, cnt
+
+        global kept_intersect_runs
+
+        bid = pushed_button(callback_context())
+
+        if bid == "upload-measurements-ix"
+            _clear_kept_runs!()
+        elseif bid == "button-remove-all-kept-ix"
+            _clear_kept_runs!()
+        elseif bid == "button-remove-kept-ix"
+            if !isnothing(selected_idx) && 1 <= selected_idx <= length(kept_intersect_runs)
+                deleteat!(kept_intersect_runs, selected_idx)
+            end
+        end
+
+        return something(cnt, 0) + 1
+    end
+
+    # ── Callback 4c: Render kept-runs summary table + selector dropdown ─────────
+    callback!(
+        app,
+        Output("kept-runs-summary-ix",       "children"),
+        Output("kept-runs-select-ix",        "options"),
+        Output("kept-runs-select-ix",        "value"),
+        Input("kept-runs-trigger-ix",        "data"),
+        Input("kept-runs-manage-trigger-ix", "data"),
+        prevent_initial_call = true,
+    ) do _, _
+
+        global kept_intersect_runs
+
+        summary_md = _kept_runs_summary_markdown()
+        opts       = [Dict("label" => s.label, "value" => i) for (i, s) in enumerate(kept_intersect_runs)]
+        val        = isempty(kept_intersect_runs) ? nothing : length(kept_intersect_runs)
+
+        return dcc_markdown(summary_md), opts, val
+    end
+
+    # ── Callback 4d: Show the selected kept run's figure/log/metadata ───────────
+    callback!(
+        app,
+        Output("kept-run-graph-ix",             "figure"),
+        Output("kept-run-meta-ix",               "children"),
+        Output("kept-run-log-ix",                "children"),
+        Output("kept-run-mismatch-alert-ix",     "is_open"),
+        Output("kept-run-mismatch-alert-ix",     "children"),
+        Input("kept-runs-select-ix",             "value"),
+        prevent_initial_call = true,
+    ) do idx
+
+        global kept_intersect_runs
+
+        no_run = (Dict(), "*No kept run selected.*", "", false, "")
+        (isnothing(idx) || idx < 1 || idx > length(kept_intersect_runs)) && return no_run
+
+        snap      = kept_intersect_runs[idx]
+        axes_line = (length(snap.diagram_Xrange) == 2 && length(snap.diagram_Yrange) == 2) ?
+            "Axes: T [$(round(snap.diagram_Xrange[1],digits=1)) - $(round(snap.diagram_Xrange[2],digits=1))] °C, " *
+            "P [$(round(snap.diagram_Yrange[1],digits=2)) - $(round(snap.diagram_Yrange[2],digits=2))] kbar" :
+            ""
+        meta_md = "**$(snap.label)**  \n" *
+                  "Phases: $(join(_display_ix_token.(snap.selected), ", "))  \n" *
+                  "Kept: $(Dates.format(snap.timestamp, "yyyy-mm-dd HH:MM:SS"))  \n" *
+                  (isempty(axes_line) ? "" : "$(axes_line)  \n") *
+                  _diagram_info_markdown(snap.diagram_info)
+        log_md  = intersect_log_markdown(snap.result)
+        warn_msg = _kept_run_mismatch_message(idx)
+
+        return snap.figure, meta_md, log_md, !isempty(warn_msg), warn_msg
     end
 
     # ── Callback 5: Auto-set value range when the displayed field changes ───────

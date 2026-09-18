@@ -1,0 +1,73 @@
+db,test,sysUnit,title,comments,SiO2,Al2O3,CaO,MgO,FeO,K2O,Na2O,TiO2,O,MnO,Cr2O3,H2O,CO2,S
+mp,0,mol,FPWorldMedian pelite - water oversaturated,"Forshaw, J. B., & Pattison, D. R. (2023)",70.999,12.805,0.771,3.978,6.342,2.7895,1.481,0.758,0.72933,0.075,,30.0,,
+mp,1,mol,FPWorldMedian pelite - water undersaturated,"Forshaw, J. B., & Pattison, D. R. (2023)",70.999,12.805,0.771,3.978,6.342,2.7895,1.481,0.758,0.72933,0.075,,5.0,,
+mp,2,mol,Pelite - water oversaturated,"White et al., 2014, Fig 8",64.578,13.651,1.586,5.529,8.025,2.943,2.0,0.907,0.65,0.175,,40.0,,
+mp,3,mol,Pelite - water undersaturated,"White et al., 2014, Fig 8",64.578,13.651,1.586,5.529,8.025,2.943,2.0,0.907,0.65,0.175,,6.244,,
+mp,4,mol,Garnet-migmatite - AV0832a,"Riel et al., 2013",73.988,8.6143,2.0146,2.7401,3.8451,1.7686,2.482,0.6393,0.11,0.063,,10.0,,
+mp,5,mol,Average Bulk CC,"Rudnick & Gao, 2003",64.3648,9.9511,7.2938,7.3788,5.9594,1.2261,3.1608,0.5752,0.0,0.09,,10.0,,
+mp,6,mol,Average UCC,"Rudnick & Gao, 2003",71.6485,9.7623,4.1376,3.9775,4.5338,1.9212,3.41,0.5179,0.0,0.0911,,10.0,,
+mp,7,mol,Average MCC,"Rudnick & Gao, 2003",67.7653,9.4325,6.0023,5.7115,5.372,1.5655,3.5068,0.5538,0.0,0.0904,,10.0,,
+mp,8,mol,Average MCC,"Rudnick & Gao, 2003",56.0622,10.4548,10.7862,11.3316,7.5234,0.4084,2.6968,0.6475,0.0,0.0889,,0.0,,
+mb,0,mol,FWorldMedian metabasite - water over saturated,"Forshaw et al., 2024",53.5839,9.5138,10.7349,10.6198,10.0168,0.3326,2.852,1.0439,1.3023,,,40.0,,
+mb,1,mol,FWorldMedian metabasite - water undersaturated,"Forshaw et al., 2024",53.5839,9.5138,10.7349,10.6198,10.0168,0.3326,2.852,1.0439,1.3023,,,5.0,,
+mb,2,mol,SM89 oxidised average MORB composition,"Sun & McDonough, 1989",52.47,9.1,12.21,12.71,8.15,0.23,2.61,1.05,1.47,,,20.0,,
+mb,3,mol,Natural amphibolites and low-temperature granulites,unpublished,51.08,9.68,13.26,11.21,11.66,0.16,0.79,1.37,0.8,,,20.0,,
+mb,4,mol,SQA Synthetic amphibolite composition,"Patino Douce & Beard, 1995",60.05,6.62,8.31,9.93,6.57,0.44,1.83,1.27,0.33,,,4.64,,
+mb,5,mol,BL478: Sample 478,"Beard & Lofgren, 1991",53.96,9.26,10.15,8.11,10.14,0.11,2.54,1.35,0.98,,,3.42,,
+ig,0,mol,KLB1 Peridotite - Anhydrous,"Holland et al., 2018",38.494,1.776,2.824,50.566,5.886,0.01,0.25,0.1,0.096,,0.109,0.0,,
+ig,1,mol,RE46 - Icelandic basalt,"Yang et al., 1996",50.72,9.16,15.21,16.25,7.06,0.01,1.47,0.39,0.35,,0.01,0.0,,
+ig,2,mol,N_MORB - Basalt,"Gale et al., 2013",53.21,9.41,12.21,12.21,8.65,0.09,2.9,1.21,0.69,,0.02,0.0,,
+ig,3,mol,MIX1-G - Pyroxenite,"Hirschmann et al., 2003",45.25,8.89,12.22,24.68,6.45,0.03,1.39,0.67,0.11,,0.02,0.0,,
+ig,4,mol,High-Al basalt,"Baker, 1983",54.4,12.96,11.31,7.68,8.63,0.54,3.93,0.79,0.41,,0.01,0.0,,
+ig,5,mol,Tonalite 101,"Piwinskii, 1968",66.01,11.98,7.06,4.16,5.3,1.57,4.12,0.66,0.97,,0.01,50.0,,
+ig,6,mol,Wet Basalt,unpublished,50.081,8.6901,11.6698,12.1438,7.7832,0.215,2.4978,1.0059,0.467,,0.01,5.4364,,
+igd,0,mol,KLB1 Peridotite - Anhydrous,"Holland et al., 2018",38.494,1.776,2.824,50.566,5.886,0.01,0.25,0.1,0.096,,0.109,,,
+igd,1,mol,RE46 - Icelandic basalt,"Yang et al., 1996",50.72,9.16,15.21,16.25,7.06,0.01,1.47,0.39,0.35,,0.01,,,
+igd,2,mol,CMV - High-Ti ultramafic,Partial melting of high-Ti ultramafic composition CMV,35.95,2.91,3.82,38.0,12.96,0.15,0.24,5.9,0.0,,0.06,,,
+igd,3,mol,Sample 10084,Apollo 11 high-Ti mare basalt,43.87,8.57,14.23,12.67,14.03,0.09,0.42,5.99,0.0,,0.12,,,
+igd,4,mol,TiCum,Ti-cumulate composition,43.74,1.73,9.24,11.75,26.02,0.07,0.2,7.2,0.0,,0.04,,,
+igm,0,mol,KLB1 Peridotite - Anhydrous,"Holland et al., 2018",38.494,1.776,2.824,50.566,5.886,0.01,0.25,0.1,0.096,,0.109,,,
+igm,1,mol,RE46 - Icelandic basalt,"Yang et al., 1996",50.72,9.16,15.21,16.25,7.06,0.01,1.47,0.39,0.35,,0.01,,,
+igad,0,mol,Ne-Syenite,"Weller et al., 2024",62.0107,13.3269,3.0015,1.5056,4.9247,3.9242,9.1112,0.7576,1.4279,,0.0097,,,
+igad,1,mol,Syenite,"Weller et al., 2024",68.828,11.4255,2.7115,1.4736,4.2244,3.6546,6.2973,0.501,0.8743,,0.0098,,,
+igad,2,mol,Ijolite,"Weller et al., 2024",47.4838,12.3727,12.4794,5.0519,7.7281,1.6096,10.3365,1.3187,1.6096,,0.0097,,,
+igad,3,mol,KLB1 Peridotite - Anhydrous,"Holland et al., 2018",38.494,1.776,2.824,50.566,5.886,0.01,0.25,0.1,0.096,,0.109,,,
+igad,4,mol,RE46 - Icelandic basalt,"Yang et al., 1996",50.72,9.16,15.21,16.25,7.06,0.01,1.47,0.39,0.35,,0.01,,,
+um,0,mol,Serpentine oxidized,"Evans & Forst, 2021",20.044,0.6256,,29.24,3.149,,,,0.7324,,,46.755,,0.3
+um,1,mol,Serpentine reduced,"Evans & Forst, 2021",20.044,0.6256,,29.24,3.149,,,,0.1324,,,46.755,,0.3
+ume,0,mol,Barberton komatiite,"Tamblyn et al., 2022",38.51,2.25,6.92,29.03,4.65,,0.25,,0.5,,0.0,16.0,0.0,0.0
+ume,1,mol,Serpentine oxidized,"Evans & Forst, 2021",20.044,0.6256,2.0,29.24,3.149,,0.15,,0.7324,,0.0,46.755,0.0,0.3
+ume,2,mol,Serpentine reduced,"Evans & Forst, 2021",20.044,0.6256,2.0,29.24,3.149,,0.15,,0.1324,,0.0,46.755,0.0,0.3
+ume,3,mol,Cr-Serpentine reduced,"Evans & Forst, 2021",20.044,0.6256,2.0,29.24,3.149,,0.15,,0.1324,,0.1,46.755,0.0,0.3
+mpe,0,mol,FPWorldMedian pelite - water oversaturated,"Forshaw, J. B., & Pattison, D. R. (2023)",70.999,12.805,0.771,3.978,6.342,2.7895,1.481,0.758,0.72933,0.075,,30.0,5.0,1.0
+mpe,1,mol,FPWorldMedian pelite - water undersaturated,"Forshaw, J. B., & Pattison, D. R. (2023)",70.999,12.805,0.771,3.978,6.342,2.7895,1.481,0.758,0.72933,0.075,,5.0,5.0,1.0
+mpe,2,mol,Pelite - water oversaturated,"White et al., 2014, Fig 8",64.578,13.651,1.586,5.529,8.025,2.943,2.0,0.907,0.65,0.175,,40.0,5.0,1.0
+mpe,3,mol,Pelite - water undersaturated,"White et al., 2014, Fig 8",64.578,13.651,1.586,5.529,8.025,2.943,2.0,0.907,0.65,0.175,,6.244,5.0,1.0
+mpe,4,mol,Garnet-migmatite - AV0832a,"Riel et al., 2013",73.988,8.6143,2.0146,2.7401,3.8451,1.7686,2.482,0.6393,0.11,0.063,,10.0,5.0,1.0
+mpe,5,mol,IO27,"Peillod et al., 2024",65.514,9.5,2.012,7.38,8.896,1.48,4.108,0.99,0.0,0.098,,30.0,0.0,0.0
+mtl,0,mol,KLB-1,"Holland et al., 2013",38.494,1.776,2.824,50.566,5.886,,0.25,,,,,,,
+mtl,1,mol,Pyrolite,"Holland et al., 2013",38.89,2.2,3.1,50.0,5.8,,0.01,,,,,,,
+mtl,2,mol,Harzburgite,"Holland et al., 2013",36.39,0.7,0.9,56.6,5.4,,0.01,,,,,,,
+sb11,0,mol,KLB-1,Stixrude & Lithgow-Bertelloni (2011),38.41,1.8,3.18,50.49,5.85,,0.25,,,,,,,
+sb11,1,mol,Pyrolite,Stixrude & Lithgow-Bertelloni (2011),38.89,3.1,2.2,50.0,5.8,,0.01,,,,,,,
+sb11,2,mol,Harzburgite,Stixrude & Lithgow-Bertelloni (2011),36.39,0.9,0.7,56.6,5.4,,0.01,,,,,,,
+sb11,3,mol,Bulk DMM,"Workman & Hart, 2005",38.82533751228409,2.949115292540495,2.0365437262790334,50.13984011481426,5.939734393438787,,0.10942896064333986,,,,,,,
+sb11,4,mol,RE46 - Icelandic basalt,"Yang et al., 1996",50.72,9.16,15.21,16.25,7.06,,1.47,,,,,,,
+sb21,0,mol,KLB-1,Stixrude & Lithgow-Bertelloni (2021),38.41,1.8,3.18,50.49,5.85,,0.25,,,,,,,
+sb21,1,mol,Pyrolite,Stixrude & Lithgow-Bertelloni (2021),38.89,3.1,2.2,50.0,5.8,,0.01,,,,,,,
+sb21,2,mol,Harzburgite,Stixrude & Lithgow-Bertelloni (2021),36.39,0.9,0.7,56.6,5.4,,0.01,,,,,,,
+sb21,3,mol,Bulk DMM,"Workman & Hart, 2005",38.82533751228409,2.949115292540495,2.0365437262790334,50.13984011481426,5.939734393438787,,0.10942896064333986,,,,,,,
+sb21,4,mol,RE46 - Icelandic basalt,"Yang et al., 1996",50.72,9.16,15.21,16.25,7.06,,1.47,,,,,,,
+sb24,0,mol,Basalt,Stixrude & Lithgow-Bertelloni (2024),48.295,9.483,12.87,13.951,5.69,,2.071,,1.16,,0.027,,,
+sb24,1,mol,Pyrolite,Stixrude & Lithgow-Bertelloni (2024),38.83,2.03,2.94,50.02,5.69,,0.11,,0.18,,0.19,,,
+sb24,2,mol,Harzburgite,Stixrude & Lithgow-Bertelloni (2024),34.009,0.461,0.755,53.617,5.46,,0.008,,0.081,,0.093,,,
+po,0,mol,Pelite - water oversaturated,"White et al., 2014, Fig 8 (H2O/O adapted for po)",64.578,13.651,1.586,5.529,8.025,2.943,2.0,0.907,0.0,,,13.5,,
+mbe,0,mol,FWorldMedian metabasite - water over saturated,"Forshaw et al., 2024",53.5839,9.5138,10.7349,10.6198,10.0168,0.3326,2.852,1.0439,1.3023,,,40.0,,
+mbe,1,mol,FWorldMedian metabasite - water undersaturated,"Forshaw et al., 2024",53.5839,9.5138,10.7349,10.6198,10.0168,0.3326,2.852,1.0439,1.3023,,,5.0,,
+mbe,2,mol,SM89 oxidised average MORB composition,"Sun & McDonough, 1989",52.47,9.1,12.21,12.71,8.15,0.23,2.61,1.05,1.47,,,20.0,,
+mbe,3,mol,Natural amphibolites and low-temperature granulites,unpublished,51.08,9.68,13.26,11.21,11.66,0.16,0.79,1.37,0.8,,,20.0,,
+mbe,4,mol,SQA Synthetic amphibolite composition,"Patino Douce & Beard, 1995",60.05,6.62,8.31,9.93,6.57,0.44,1.83,1.27,0.33,,,4.64,,
+mbe,5,mol,BL478: Sample 478,"Beard & Lofgren, 1991",53.96,9.26,10.15,8.11,10.14,0.11,2.54,1.35,0.98,,,3.42,,
+all,0,mol,FPWorldMedian pelite - water oversaturated,"Forshaw, J. B., & Pattison, D. R. (2023)",70.999,12.805,0.771,3.978,6.342,2.7895,1.481,0.758,0.72933,0.075,0.0,30.0,2.0,0.05
+all,1,mol,KLB1 Peridotite - Anhydrous,"Holland et al., 2018",38.494,1.776,2.824,50.566,5.886,0.01,0.25,0.1,0.096,0.0,0.109,0.0,0.0,0.0
+all,2,mol,RE46 - Icelandic basalt,"Yang et al., 1996",50.72,9.16,15.21,16.25,7.06,0.01,1.47,0.39,0.35,0.0,0.01,0.0,0.0,0.0

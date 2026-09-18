@@ -411,10 +411,10 @@ function Tab_Simulation_Callbacks(app)
 
         bid = pushed_button( callback_context() )
 
-        if dtb == "sb11" || dtb == "sb21" || dtb == "sb24" || dtb == "rMELTS" || dtb == "pMELTS" || dtb == "po"
-            style  = Dict("display" => "none")
-        else
+        if has_dataset_choice(dtb)
             style   = Dict("display" => "block")
+        else
+            style  = Dict("display" => "none")
         end
         db_in       = retrieve_solution_phase_information(dtb)
         ss_fname_lu = Dict(s.ss_name => s.ss_fName for s in db_in.data_ss)
@@ -469,7 +469,7 @@ function Tab_Simulation_Callbacks(app)
                 pure_phase_selection_value  = pp_disp
             else
                 phase_selection_value       = preset_ss_selection(preset, db_in.ss_name)
-                pure_phase_selection_value  = intersect(to_str_vec(current_pp_selection), pp_disp)
+                pure_phase_selection_value  = preset_pp_selection(preset, pp_disp)
                 isempty(pure_phase_selection_value) && (pure_phase_selection_value = pp_disp)
             end
             preset_value_out = no_update()

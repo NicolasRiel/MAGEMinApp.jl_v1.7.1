@@ -102,13 +102,17 @@ function build_intersect_model_df(
         elem_to_ox_idx[elem] = k
     end
 
-    # Parse and validate "Phase_Element" strings
+    # Parse and validate "Phase_Element" (or "Phase::Domain_Element") strings.
+    # Domains only exist on the measurement side — one calculated composition
+    # per phase stands in for all of its domains — so the model lookup below
+    # matches on the base phase name while the output column keeps the full
+    # "Phase::Domain_Element" key.
     parsed = Vector{Tuple{String, String}}(undef, n_cols)
     for (j, pe) in enumerate(phase_elements)
         parts = split(pe, "_"; limit=2)
         length(parts) == 2 ||
             error("Expected 'Phase_Element' format (e.g. 'Grt_Mg'), got: \"$pe\"")
-        ph, el = String(parts[1]), String(parts[2])
+        ph, el = _base_phase(String(parts[1])), String(parts[2])
         haskey(elem_to_ox_idx, el) ||
             error("Element \"$el\" (from \"$pe\") not found in oxide list: $(join(oxides, ", "))\n" *
                   "Known elements: $(join(sort(collect(keys(elem_to_ox_idx))), ", "))")
@@ -258,5 +262,6 @@ function intersect_log_markdown(result)::String
     )
 
     text = IntersecT.format_log(log_disp, "T [Celsius]", "P [$(pressure_unit_label())]")
+    text = _display_ix_token(text)
     return "```\n" * text * "\n```"
 end

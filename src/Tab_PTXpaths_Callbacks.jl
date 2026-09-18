@@ -1962,7 +1962,7 @@ function Tab_PTXpaths_Callbacks(app)
                 pure_phase_selection_value  = pp_disp
             else
                 phase_selection_value       = preset_ss_selection(preset_ptx, db_in.ss_name)
-                pure_phase_selection_value  = intersect(to_str_vec(current_pp_selection), pp_disp)
+                pure_phase_selection_value  = preset_pp_selection(preset_ptx, pp_disp)
                 isempty(pure_phase_selection_value) && (pure_phase_selection_value = pp_disp)
             end
             preset_value_out = no_update()

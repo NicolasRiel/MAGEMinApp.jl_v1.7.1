@@ -11,22 +11,6 @@
 
 import Contour as CTR
 
-mutable struct ss_infos
-    ss_name :: String
-    n_em    :: Int64
-    n_xeos  :: Int64
-    ss_em   :: Vector{String}
-    ss_xeos :: Vector{String}
-end
-
-mutable struct db_infos
-    db_name :: String
-    db_info :: String
-    data_ss :: Array{ss_infos}
-    ss_name :: Array{String}
-    data_pp :: Array{String}
-end
-
 mutable struct isopleth_data
     n_iso   :: Int64
     n_iso_max   :: Int64
