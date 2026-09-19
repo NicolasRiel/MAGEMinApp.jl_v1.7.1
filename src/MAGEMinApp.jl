@@ -76,6 +76,7 @@ module MAGEMinApp
     include(joinpath(pkg_dir,"src","Boundaries/poly.jl"))
     include(joinpath(pkg_dir,"src","Boundaries/purge.jl"))
     include(joinpath(pkg_dir,"src","Boundaries/utils.jl"))
+    include_dependency(joinpath(pkg_dir,"user_data","predefined_bulks.csv"))
     include(joinpath(pkg_dir,"src","appData.jl"))
 
     # Pre-compile the layout-building functions at package build time, so the
