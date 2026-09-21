@@ -1048,26 +1048,31 @@ function Tab_PhaseDiagram_Callbacks(app)
         Output("compute-button",            "value"),
         Output("uni-refine-pb-button",      "value"),
         Output("refine-pb-button",          "value"),
+        Output("mc-run-trigger",            "value"),
         Output("start-trigger",              "value"),
 
         Input("compute-button-raw",         "n_clicks"),
         Input("uni-refine-pb-button-raw",   "n_clicks"),
         Input("refine-pb-button-raw",       "n_clicks"),
- 
+        Input("mc-run-button-raw",          "n_clicks"),
+
         State("compute-button",             "value"),
         State("uni-refine-pb-button",       "value"),
         State("refine-pb-button",           "value"),
+        State("mc-run-trigger",             "value"),
 
         prevent_initial_call    = true,
-    ) do compute_raw, uni_refine_raw, refine_raw, compute, uni_refine, refine
+    ) do compute_raw, uni_refine_raw, refine_raw, mc_run_raw, compute, uni_refine, refine, mc_run_trigger
 
         bid  = pushed_button( callback_context() )
         if bid == "compute-button-raw"
-            return compute*-1, no_update(), no_update(), 1
+            return compute*-1, no_update(), no_update(), no_update(), 1
         elseif bid == "uni-refine-pb-button-raw"
-            return no_update(), uni_refine*-1, no_update(), 1
+            return no_update(), uni_refine*-1, no_update(), no_update(), 1
         elseif bid == "refine-pb-button-raw"
-            return no_update(), no_update(), refine*-1, 1
+            return no_update(), no_update(), refine*-1, no_update(), 1
+        elseif bid == "mc-run-button-raw"
+            return no_update(), no_update(), no_update(), mc_run_trigger*-1, 1
         end
 
     end
@@ -1227,8 +1232,9 @@ function Tab_PhaseDiagram_Callbacks(app)
         Output("show-text-list-id",         "style"),
         Output("stop-trigger",              "data"),
         Output("range-slider-color",        "value"),
-        
-        Input("update-reaction-line",       "n_clicks"), 
+        Output("mc-run-done",               "data"),
+
+        Input("update-reaction-line",       "n_clicks"),
         Input("show-grid",                  "value"), 
         Input("show-full-grid",             "value"), 
         Input("show-lbl-id",                "value"),
@@ -1245,6 +1251,7 @@ function Tab_PhaseDiagram_Callbacks(app)
         Input("compute-button",         "value"),
         Input("refine-pb-button",       "value"),
         Input("uni-refine-pb-button",   "value"),
+        Input("mc-run-trigger",         "value"),
 
         # color section
         Input("min-color-id",           "value"),
@@ -1373,10 +1380,16 @@ function Tab_PhaseDiagram_Callbacks(app)
         State("iso-max-id",             "value"),
         State("tabs",                   "active_tab"),      # currently active tab
 
+        # Monte Carlo (Uncertainty tab)
+        State("mc-sigma-table",         "data"),
+        State("mc-sigma-mode",          "value"),
+        State("mc-n-realizations",      "value"),
+        State("mc-seed",                "value"),
+
         prevent_initial_call = true,
 
     ) do    reac_up,    grid,       full_grid,  lbl,     addIso,     removeIso,  removeAllIso,    isoShow,   isoHide,   isoShowAll,    isoHideAll,
-            n_clicks_mesh, n_clicks_refine, uni_n_clicks_refine,
+            n_clicks_mesh, n_clicks_refine, uni_n_clicks_refine, n_clicks_mc,
             minColor,   maxColor,
             colorMap,   smooth,     rangeColor, set_white,  reverse,    fieldname,  updateTitle,     loadstateid,       exportFig,  warr_naming, pressure_unit,
             assemblage_selected_cells, clearHighlight,
@@ -1393,9 +1406,10 @@ function Tab_PhaseDiagram_Callbacks(app)
             tepm,       kds_mod,    zrsat_mod,  ssat_mod,   co2sat_mod, P2O5sat_mod,    mnzsat_mod,     bulkte1,    bulkte2,
             test,
             isopleths,  isoplethsID,isoplethsHid,  isoplethsHidID,  phase,      ss,         em,     ox,    of,     ot, sys, rmf, calc, cust, calc_sf, calc_ox, cust_sf, cust_ox,
-            isoLineStyle, isoLineWidth, isoColorLine,           isoLabelSize,   
+            isoLineStyle, isoLineWidth, isoColorLine,           isoLabelSize,
             minIso,     stepIso,    maxIso,
-            active_tab
+            active_tab,
+            mc_sigma_data, mc_sigma_mode_str, mc_n_real, mc_seed_val
 
 
         global use_GPa
@@ -1445,6 +1459,7 @@ function Tab_PhaseDiagram_Callbacks(app)
         update_reaction_list      = ""
         store_stop   = string(rand())
         clear_selection      = no_update()     # only touched when a new diagram is built or the Clear button is pushed
+        mc_done      = no_update()
 
 
         if bid == "compute-button"
@@ -1559,6 +1574,38 @@ function Tab_PhaseDiagram_Callbacks(app)
             update_ss_list  = 1
             update_reaction_list  = 1
             clear_selection = []
+
+        elseif bid == "mc-run-trigger"
+
+            global gridded_fields, addedRefinementLvl, CompProgress
+
+            if diagType != "pt" || watsat == "true"
+                mc_done = "failed:diagram"
+            elseif !@isdefined(gridded_fields)
+                mc_done = "failed:nodata"
+            else
+                sigma_mode   = mc_sigma_mode_str == "absolute" ? :absolute : :relative
+                mc_defaults  = mc_sigma_for_oxides(oxi)
+                sigma_lookup = isempty(mc_sigma_data) ? Dict{String,Float64}() :
+                    Dict(String(r[:oxide]) => (r[:sigma] isa String ? parse(Float64, r[:sigma]) : Float64(r[:sigma])) for r in mc_sigma_data)
+                sigma_input  = [get(sigma_lookup, oxi[i], mc_defaults[i]) for i in eachindex(oxi)]
+                sigma_mode == :absolute && (sigma_input = sigma_input ./ 100.0)
+
+                mc_opts = mc_ref_options(dtb, dataset, oxi, bufferType, Float64(bufferN1), Int64(scp), solver,
+                                          cpx, limOpx, Float64(limOpxVal), phase_selection, custW == true)
+
+                N_mc      = Int64(mc_n_real)
+                refLvl_mc = Int64(something(refLvl, 0)) + addedRefinementLvl
+                seed_mc   = isnothing(mc_seed_val) ? nothing : Int64(mc_seed_val)
+
+                t_mc = @elapsed mc_res = run_monte_carlo_pt(bulk_L, sigma_input, sigma_mode, N_mc,
+                                                             Xrange, Yrange, sub, refLvl_mc, mc_opts; seed = seed_mc)
+
+                global mc_result
+                mc_result = mc_res
+
+                mc_done = "ok:$N_mc:$(round(t_mc, digits=1))"
+            end
 
         elseif bid == "load-state-id"
             data_plot,layout,heat_map_export =  update_displayed_field_phaseDiagram( xtitle,     ytitle,
@@ -1699,7 +1746,7 @@ function Tab_PhaseDiagram_Callbacks(app)
 
         elseif bid == "mineral-naming-dropdown"
             if !@isdefined(Out_XY) || isempty(Out_XY) || !@isdefined(PT_infos)
-                return no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update()
+                return no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update()
             end
             global assemblage_rows, list_compacted_idx, raw_field_id
             data_plot, annotations, txt_list, assemblage_rows, list_compacted_idx, raw_field_id = get_diagram_labels(
@@ -1708,13 +1755,13 @@ function Tab_PhaseDiagram_Callbacks(app)
 
         elseif bid == "pressure-unit-dropdown"
             if !@isdefined(data_plot) || !@isdefined(layout)
-                return no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update()
+                return no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update()
             end
             # redraw only: data_plot/layout stay in kbar, apply_pressure_display() rescales for display below
 
         elseif bid == "phase-assemblage-table-id"
             if !@isdefined(data_plot) || !@isdefined(layout) || !@isdefined(list_compacted_idx) || !@isdefined(raw_field_id)
-                return no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update()
+                return no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update()
             end
             # clear any previously highlighted field (reset every field trace back to its inert placeholder)
             # before (possibly) drawing a new one -- data_plot[1] is the heatmap, data_plot[end] is the hidden hover layer
@@ -1746,7 +1793,7 @@ function Tab_PhaseDiagram_Callbacks(app)
 
         elseif bid == "clear-assemblage-highlight-button"
             if !@isdefined(data_plot) || !@isdefined(layout)
-                return no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update()
+                return no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update(), no_update()
             end
             for k = 2:length(data_plot)-1
                 data_plot[k] = scatter(; x = nothing, y = nothing, fill = "toself", fillcolor = "transparent",
@@ -1957,9 +2004,9 @@ function Tab_PhaseDiagram_Callbacks(app)
                                                                         scale    =  2.0,       ).fields)
 
         if isempty(update_ss_list) && isempty(update_reaction_list)
-            return grid, full_grid, fig_cap, config_cap, fig, config, infos, assemblage_rows, clear_selection, txt_list, isopleths, isoplethsHid, smooth, active_tab, minColor,   maxColor, loading, no_update(), no_update(), show_text_list, store_stop, rangeColor
+            return grid, full_grid, fig_cap, config_cap, fig, config, infos, assemblage_rows, clear_selection, txt_list, isopleths, isoplethsHid, smooth, active_tab, minColor,   maxColor, loading, no_update(), no_update(), show_text_list, store_stop, rangeColor, mc_done
         else
-            return grid, full_grid, fig_cap, config_cap, fig, config, infos, assemblage_rows, clear_selection, txt_list, isopleths, isoplethsHid, smooth, active_tab, minColor,   maxColor, loading, update_ss_list, update_reaction_list, show_text_list, store_stop, rangeColor
+            return grid, full_grid, fig_cap, config_cap, fig, config, infos, assemblage_rows, clear_selection, txt_list, isopleths, isoplethsHid, smooth, active_tab, minColor,   maxColor, loading, update_ss_list, update_reaction_list, show_text_list, store_stop, rangeColor, mc_done
         end
     end
 

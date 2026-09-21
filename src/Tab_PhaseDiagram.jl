@@ -72,10 +72,16 @@ function Tab_PhaseDiagram()
                                             value   = -1   ),
                                         dbc_input(
                                             id      = "start-trigger",
-                                            type    = "number", 
+                                            type    = "number",
                                             value   = -1   ),
                                         dcc_store(
                                             id      = "stop-trigger"),
+                                        dbc_input(
+                                            id      = "mc-run-trigger",
+                                            type    = "number",
+                                            value   = -1   ),
+                                        dcc_store(
+                                            id      = "mc-run-done"),
 
                                     ], style = Dict("display" => "none"), id      = "show-hidden-relay-button-id"), #none, block
                                 ]),
@@ -1728,6 +1734,7 @@ function Tab_PhaseDiagram()
                             #         ),
                             #     ]),
                             # ]),
+                            Tab_MonteCarlo(),
                             dbc_tab(label="Classifications", children=[
                         dbc_row([
 
