@@ -190,19 +190,21 @@ end
 
 function set_min_to_white(colormap; reverseColorMap = false)
 
-    color       = colormap
-    nc          = length(color)
-    cust_color  = Vector{String}(undef, nc)
-    cust_color = [ [(i-1)/(nc-1),"rgba($(color[i].r),$(color[i].g),$(color[i].b),1.0)"] for i = 1:nc]
+    nc = length(colormap)
+    if first(colormap) isa AbstractVector
+        cust_color = [[colormap[i][1], colormap[i][2]] for i = 1:nc]
+    else
+        rgb255(c) = round(Int, 255 * clamp(c, 0, 1))
+        cust_color = [ [(i-1)/(nc-1),"rgba($(rgb255(colormap[i].r)),$(rgb255(colormap[i].g)),$(rgb255(colormap[i].b)),1.0)"] for i = 1:nc]
+    end
 
     if reverseColorMap == false
-        cust_color[1][2] = "rgba(1.0,1.0,1.0,0.0)"
+        cust_color[1][2] = "rgba(255,255,255,0.0)"
     else
-        cust_color[end][2] = "rgba(1.0,1.0,1.0,0.0)"
+        cust_color[end][2] = "rgba(255,255,255,0.0)"
     end
-    colormap = cust_color
 
-    return colormap
+    return cust_color
 end
 
 function discretize_colormap(colormap,min,max)

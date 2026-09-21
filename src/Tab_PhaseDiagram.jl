@@ -168,11 +168,16 @@ function Tab_PhaseDiagram()
                                 dbc_collapse(
                                     dbc_card(dbc_cardbody([
                                         dbc_row([
-                                            dbc_button("Export all layers", 
+                                            dbc_button("Export svg", 
                                                         id          = "export-layers", color="light",  n_clicks=0,
                                                         style       =  Dict( "textAlign"    => "center",
                                                                             "font-size"     => "100%",
                                                                             "border"        =>"1px grey solid")), 
+                                        ]),
+                                        dbc_row([
+                                            html_div(id="export-svg-status", children="",
+                                                style = Dict("textAlign" => "center", "font-size" => "75%", "color" => "grey",
+                                                             "marginTop" => 6, "wordBreak" => "break-all")),
                                         ]),
                                         dbc_row([
                                             html_div("‎ "),
@@ -1762,12 +1767,15 @@ function Tab_PhaseDiagram()
                                             dbc_row([    
                                                 dbc_offcanvas(
                                                 [
+                                                    svg_export_button_row("TAS-plot-pd"),
                                                     dbc_row([                                                                                     
                                                         TAS_plot_pd()
                                                     ]),
+                                                    svg_export_button_row("TAS-pluto-plot-pd"),
                                                     dbc_row([                                                                                     
                                                         TAS_pluto_plot_pd()
                                                     ]),
+                                                    svg_export_button_row("AFM-plot-pd"),
                                                     dbc_row([                                                                                     
                                                         AFM_plot_pd()
                                                     ]),
@@ -1813,12 +1821,15 @@ function Tab_PhaseDiagram()
                                             dbc_row([
                                                 dbc_offcanvas(
                                                 [
+                                                    svg_export_button_row("CaAmpPanelA-plot-pd"),
                                                     dbc_row([
                                                         CaAmpPanelA_plot_pd()
                                                     ]),
+                                                    svg_export_button_row("CaAmpPanelB-plot-pd"),
                                                     dbc_row([
                                                         CaAmpPanelB_plot_pd()
                                                     ]),
+                                                    svg_export_button_row("CaAmpPanelC-plot-pd"),
                                                     dbc_row([
                                                         CaAmpPanelC_plot_pd()
                                                     ]),
@@ -1862,12 +1873,15 @@ function Tab_PhaseDiagram()
                                             dbc_row([
                                                 dbc_offcanvas(
                                                 [
+                                                    svg_export_button_row("CpxQJ-plot-pd"),
                                                     dbc_row([
                                                         CpxQJ_plot_pd()
                                                     ]),
+                                                    svg_export_button_row("CpxQuad-plot-pd"),
                                                     dbc_row([
                                                         CpxQuad_plot_pd()
                                                     ]),
+                                                    svg_export_button_row("CpxNaPx-plot-pd"),
                                                     dbc_row([
                                                         CpxNaPx_plot_pd()
                                                     ]),
@@ -1911,6 +1925,7 @@ function Tab_PhaseDiagram()
                                             dbc_row([
                                                 dbc_offcanvas(
                                                 [
+                                                    svg_export_button_row("OpxQuad-plot-pd"),
                                                     dbc_row([
                                                         OpxQuad_plot_pd()
                                                     ]),
@@ -1954,9 +1969,11 @@ function Tab_PhaseDiagram()
                                             dbc_row([
                                                 dbc_offcanvas(
                                                 [
+                                                    svg_export_button_row("MicaInterlayer-plot-pd"),
                                                     dbc_row([
                                                         MicaInterlayer_plot_pd()
                                                     ]),
+                                                    svg_export_button_row("MicaCeladonite-plot-pd"),
                                                     dbc_row([
                                                         MicaCeladonite_plot_pd()
                                                     ]),
@@ -2000,6 +2017,7 @@ function Tab_PhaseDiagram()
                                             dbc_row([
                                                 dbc_offcanvas(
                                                 [
+                                                    svg_export_button_row("Feldspar-plot-pd"),
                                                     dbc_row([
                                                         Feldspar_plot_pd()
                                                     ]),
@@ -2043,6 +2061,7 @@ function Tab_PhaseDiagram()
                                             dbc_row([
                                                 dbc_offcanvas(
                                                 [
+                                                    svg_export_button_row("Garnet-plot-pd"),
                                                     dbc_row([
                                                         Garnet_plot_pd()
                                                     ]),
@@ -2086,9 +2105,11 @@ function Tab_PhaseDiagram()
                                             dbc_row([
                                                 dbc_offcanvas(
                                                 [
+                                                    svg_export_button_row("Spinel-plot-pd"),
                                                     dbc_row([
                                                         Spinel_plot_pd()
                                                     ]),
+                                                    svg_export_button_row("Ilmenite-plot-pd"),
                                                     dbc_row([
                                                         Ilmenite_plot_pd()
                                                     ]),

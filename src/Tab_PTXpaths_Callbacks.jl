@@ -2851,5 +2851,7 @@ function Tab_PTXpaths_Callbacks(app)
         return dtb == "sb24" ? filter(o -> !(o.value in hidden), all_opts) : all_opts
     end
 
+    register_svg_exports!(app, PTX_SVG_EXPORTS)
+
     return app
 end

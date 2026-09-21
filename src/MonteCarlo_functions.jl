@@ -1188,32 +1188,7 @@ function mc_export_svg(mc_res, path::AbstractString; show_labels::Bool = false,
         svg_group_close(io)
     end
 
-    if !isempty(parts.annotations)
-        svg_group_open(io, svg_id(seen, "Labels"); fill = "#212121", font_family = font, font_size = 10, anchor = "middle")
-        for (i, ann) in enumerate(parts.annotations)
-            f = ann.fields
-            (get(f, :visible, true) == true && get(f, :xref, "") == "x" && get(f, :yref, "") == "y") || continue
-            txt = string(get(f, :text, ""))
-            isempty(txt) && continue
-            px, py = svg_x(c, f[:x]), svg_y(c, f[:y])
-            fsize  = haskey(f, :font) && haskey(f[:font], :size) ? f[:font][:size] : 10
-            if get(f, :showarrow, false) == true
-                tx, ty = px + get(f, :ax, 0), py + get(f, :ay, 0)
-                len    = hypot(px - tx, py - ty)
-                if len > 0
-                    ux, uy = (px - tx) / len, (py - ty) / len
-                    svg_group_open(io, svg_id(seen, "Label_leader_$(lpad(i, 3, '0'))"); stroke = "#212121", width = 0.5)
-                    svg_line(io, tx, ty, px - 4 * ux, py - 4 * uy)
-                    svg_group_close(io)
-                    svg_polygon(io, [(px, py), (px - 4 * ux - 1.5 * uy, py - 4 * uy + 1.5 * ux), (px - 4 * ux + 1.5 * uy, py - 4 * uy - 1.5 * ux)], "#212121")
-                end
-                svg_text(io, tx, ty, txt; id = svg_id(seen, "Label_$(lpad(i, 3, '0'))"), size = fsize)
-            else
-                svg_text(io, px, py, txt; id = svg_id(seen, "Label_$(lpad(i, 3, '0'))"), size = fsize)
-            end
-        end
-        svg_group_close(io)
-    end
+    svg_annotation_layer(io, c, seen, parts.annotations; font = font)
 
     nt = parts.ticks + 1
     svg_layout_layers(io, c, seen; xticks = [xr[1] + k * (xr[2] - xr[1]) / nt for k in 0:nt],

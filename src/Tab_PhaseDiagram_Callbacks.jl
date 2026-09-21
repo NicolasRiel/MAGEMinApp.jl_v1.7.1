@@ -1265,7 +1265,6 @@ function Tab_PhaseDiagram_Callbacks(app)
         Input("fields-dropdown",        "value"),
         Input("update-title-button",    "n_clicks"),
         Input("load-state-id",          "value"),
-        Input("export-layers",          "n_clicks"),
         Input("mineral-naming-dropdown","value"),
         Input("pressure-unit-dropdown", "value"),
         Input("phase-assemblage-table-id", "selected_cells"),
@@ -1391,7 +1390,7 @@ function Tab_PhaseDiagram_Callbacks(app)
     ) do    reac_up,    grid,       full_grid,  lbl,     addIso,     removeIso,  removeAllIso,    isoShow,   isoHide,   isoShowAll,    isoHideAll,
             n_clicks_mesh, n_clicks_refine, uni_n_clicks_refine, n_clicks_mc,
             minColor,   maxColor,
-            colorMap,   smooth,     rangeColor, set_white,  reverse,    fieldname,  updateTitle,     loadstateid,       exportFig,  warr_naming, pressure_unit,
+            colorMap,   smooth,     rangeColor, set_white,  reverse,    fieldname,  updateTitle,     loadstateid,       warr_naming, pressure_unit,
             assemblage_selected_cells, clearHighlight,
             # STATES
             field_size, customTitle, txt_list,
@@ -1448,6 +1447,9 @@ function Tab_PhaseDiagram_Callbacks(app)
             Xrange = (Float64(mumu_mu1_min), Float64(mumu_mu1_max))
             Yrange = (Float64(mumu_mu2_min), Float64(mumu_mu2_max))
         end
+
+        global pd_fig_meta
+        pd_fig_meta = (xtitle = xtitle, ytitle = ytitle, diagType = diagType)
 
         fieldNames                      = ["data_plot","data_reaction","data_grid","data_isopleth_out"]
         fieldNames_exp                  = ["data_plot","data_reaction","data_grid","data_isopleth_out_export"]
@@ -1859,121 +1861,6 @@ function Tab_PhaseDiagram_Callbacks(app)
                                     xanchor     = "left",
                                     orientation = "h"
                                 ))
-
-        if bid == "export-layers"
-            lyt     = copy(layout)
-            outline = [attr(
-                                    type = "rect",
-                                    xref = "x",
-                                    yref = "y",
-                                    x0 = Xrange[1],
-                                    y0 = Yrange[1],
-                                    x1 = Xrange[2],
-                                    y1 = Yrange[2],
-                                    line = attr(color = "black", width = 2),
-                                    fillcolor = "rgba(0,0,0,0)"  # transparent fill
-                                )]
-            nticks      = 6  # number of ticks
-            tick_length = 0.01 * (Yrange[2] - Yrange[1])  # length of tick in data units
-
-            # X-axis ticks
-            xticks = range(Xrange[1], Xrange[2], length=nticks)
-            x_tick_shapes_B = [
-                attr(
-                    type = "line",
-                    xref = "x",
-                    yref = "y",
-                    x0 = x,
-                    y0 = Yrange[1],
-                    x1 = x,
-                    y1 = Yrange[1] + tick_length,
-                    line = attr(color = "black", width = 1)
-                ) for x in xticks
-            ]
-            x_tick_shapes_T = [
-                attr(
-                    type = "line",
-                    xref = "x",
-                    yref = "y",
-                    x0 = x,
-                    y0 = Yrange[2] - tick_length,
-                    x1 = x,
-                    y1 = Yrange[2],
-                    line = attr(color = "black", width = 1)
-                ) for x in xticks
-            ]
-
-            yticks = range(Yrange[1], Yrange[2], length=nticks)
-            tick_length = 0.01 * (Xrange[2] - Xrange[1])  # length of tick in data units
-            y_tick_shapes_L = [
-                attr(
-                    type = "line",
-                    xref = "x",
-                    yref = "y",
-                    x0 = Xrange[1],
-                    y0 = y,
-                    x1 = Xrange[1] + tick_length,
-                    y1 = y,
-                    line = attr(color = "black", width = 1)
-                ) for y in yticks
-            ]
-            y_tick_shapes_R = [
-                attr(
-                    type = "line",
-                    xref = "x",
-                    yref = "y",
-                    x0 = Xrange[2] - tick_length,
-                    y0 = y,
-                    x1 = Xrange[2],
-                    y1 = y,
-                    line = attr(color = "black", width = 1)
-                ) for y in yticks
-            ]
-            lyt[:shapes] = vcat(get(layout, :shapes, PlotlyBase.PlotlyAttribute[]), outline, y_tick_shapes_L, y_tick_shapes_R, x_tick_shapes_B, x_tick_shapes_T)
-
-            for i=1:n_lbl
-                lyt[:annotations][i][:visible] = false
-            end
-            filename = output_dir[1]*replace(customTitle, " " => "_") * "_$fieldname.svg"
-            savefig(plot(heat_map_export,lyt), filename; width=720, height=900)
-            np       = length(fieldNames_exp)
-            if np > 0
-                for i in 2:np
-                    if field2plot[i] == 1
-                        if fieldNames_exp[i] == "data_isopleth_out_export"
-                            ni = length(data_isopleth.active)
-                            names_raw = [trace[:name] for trace in data_isopleth.isoCap[data_isopleth.active] if haskey(trace, :name)]
-                            names = sanitize_names(names_raw)
-                            for j = 1:ni
-                                trace_fig = plot_diagram(data_isopleth.isoPexp[data_isopleth.active[j]], lyt)
-                                filename = output_dir[1]*replace(customTitle, " " => "_") * "_$(fieldNames_exp[i])_$(names[j]).svg"
-                                savefig(trace_fig, filename; width=720, height=900)
-                            end
-                        else
-                            trace_fig = plot_diagram(eval(Symbol(fieldNames_exp[i])), lyt)
-                            filename = output_dir[1]*replace(customTitle, " " => "_") * "_$(fieldNames_exp[i]).svg"
-                            savefig(trace_fig, filename; width=720, height=900)
-                        end
-                        filename = output_dir[1]*replace(customTitle, " " => "_") * "_isopleths_caption.svg"
-                        savefig(plot(data_isopleth.isoCap[data_isopleth.active],layoutCap), filename; width=900, height=30)
-                    end
-                end
-
-            end
-
-            if field2plot[2] == 1
-                for i=1:n_lbl
-                    lyt[:annotations][i][:visible] = true
-                end
-                
-                filename = output_dir[1]*replace(customTitle, " " => "_") * "_labels.svg"
-                savefig(plot(PlotlyJS.AbstractTrace[], lyt), filename; width=720, height=900)
-                open(output_dir[1] * replace(customTitle, " " => "_") * "_phase_equilibria.txt", "w") do io
-                    write(io, txt_list)
-                end
-            end
-
-        end
 
         config   = PlotConfig(    toImageButtonOptions  = attr(     name     = "Download as svg",
                                                                     format   = "svg",
@@ -2605,6 +2492,64 @@ function Tab_PhaseDiagram_Callbacks(app)
             return no_range
         end
     end
+
+    """
+        Save the phase diagram as one clean layered SVG ([`pd_export_svg`](@ref)) into
+        the figure directory (`output_dir`), replacing the old "Export all layers",
+        which wrote one Kaleido SVG per layer. Writes `<title>_<field>.svg` and, when
+        the diagram has numbered assemblages, `<title>_phase_equilibria.txt` beside it
+        (the list the small numbers refer to; it is also a text layer in the SVG). The
+        layers follow the current toggles: reaction lines (`show-grid`), mesh
+        (`show-full-grid`), labels (`show-lbl-id`) and the active isopleths. The status
+        line gives the path, size and path count, or why nothing was written. A
+        separate callback that reads the figure's globals: it neither rebuilds the
+        diagram nor touches its annotations.
+    """
+    callback!(
+        app,
+        Output("export-svg-status", "children"),
+
+        Input("export-layers", "n_clicks"),
+
+        State("show-grid",        "value"),
+        State("show-full-grid",   "value"),
+        State("show-lbl-id",      "value"),
+        State("fields-dropdown",  "value"),
+
+        prevent_initial_call = true,
+    ) do _n, show_reaction, show_mesh, show_labels, fieldname
+
+        global data, gridded, layout, data_reaction, data_isopleth, iso_show, heat_map_export, assemblage_rows, pd_fig_meta, output_dir
+
+        if !(@isdefined(heat_map_export) && @isdefined(gridded) && @isdefined(layout) && @isdefined(data)) || isnothing(pd_fig_meta)
+            return pd_export_status("Compute a phase diagram first."; ok = false)
+        end
+
+        try
+            parts = pd_figure_parts(data = data, gridded = gridded, heat_map = heat_map_export, layout_g = layout,
+                                    reaction = @isdefined(data_reaction) ? data_reaction : nothing,
+                                    data_isopleth = data_isopleth, iso_show = @isdefined(iso_show) ? iso_show : 0,
+                                    assemblage_rows = @isdefined(assemblage_rows) ? assemblage_rows : Dict{String,String}[],
+                                    xtitle = pd_fig_meta.xtitle, ytitle = pd_fig_meta.ytitle, diagType = pd_fig_meta.diagType,
+                                    show_reaction = show_reaction == "true", show_mesh = show_mesh == "true", show_labels = show_labels == "true")
+            mkpath(output_dir[1])
+            base = output_dir[1] * replace(isempty(parts.title) ? "phase_diagram" : parts.title, r"[ /\\:]" => "_")
+            path = base * "_" * strip(replace(string(fieldname), r"[^A-Za-z0-9]+" => "_"), '_') * ".svg"
+            r    = pd_export_svg(parts, path)
+            msg  = "Saved $(r.path) ($(round(r.bytes / 1024, digits = 1)) KB, $(r.n_paths) paths)."
+            if !isempty(parts.assemblages)
+                open(base * "_phase_equilibria.txt", "w") do io
+                    write(io, join(parts.assemblages, "\n") * "\n")
+                end
+                msg *= " Assemblage list: $(base)_phase_equilibria.txt."
+            end
+            return pd_export_status(msg; ok = true)
+        catch e
+            return pd_export_status("Export failed: " * sprint(showerror, e); ok = false)
+        end
+    end
+
+    register_svg_exports!(app, PD_CLASSIFICATION_SVG_EXPORTS)
 
     return app
 end
