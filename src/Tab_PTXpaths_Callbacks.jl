@@ -2852,6 +2852,10 @@ function Tab_PTXpaths_Callbacks(app)
     end
 
     register_svg_exports!(app, PTX_SVG_EXPORTS)
+    register_svg_export!(app, "ree-spectrum-ptx", "PTX_TE_spectrum";
+                          extra_states = [("te-ptx-step-id", "value"), ("normalization-te-ptx", "value")],
+                          info_fn = (step_id, norm) -> get_ptx_spectrum_info(Int(step_id), norm))
+    register_svg_export!(app, "te-evol-ptx", "PTX_TE_evolution"; info_fn = get_ptx_evolution_info)
 
     return app
 end

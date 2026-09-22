@@ -513,6 +513,39 @@ function svg_area_band(c::SVGCanvas, xs::AbstractVector, ytop::AbstractVector, y
 end
 
 """
+    svg_info_height(info; line_h = 11.5)
+
+    Vertical room `info` needs below the plot (the tallest column's `<br>`-separated
+    line count times `line_h`), `0.0` when `info` is empty - for sizing the canvas
+    before drawing, the same way [`pd_export_svg`](@ref) always has.
+"""
+svg_info_height(info; line_h::Real = 11.5) =
+    isempty(info) ? 0.0 : maximum(length(svg_text_runs(t)) for t in info) * line_h
+
+"""
+    svg_info_layer(io, seen, info; left, y, pw, font, ink, line_h = 11.5, id = "Info")
+
+    The provenance text box under a plot: `info` (one multi-line, `<br>`-joined string
+    per column - a phase-diagram-style box is `[labels, values]`, two columns) as real
+    `<text>`, columns spaced `0.2 * pw` apart starting at `left`, top-anchored at `y`.
+    Shared by every exporter that carries this kind of box via paper-anchored
+    (`xref="paper"`) annotations, so it looks identical wherever it appears -
+    `pd_export_svg` (phase diagram/trace elements) and `plotly_export_cartesian_svg`
+    (PTX paths).
+"""
+function svg_info_layer(io::IO, seen::Set{String}, info; left::Real, y::Real, pw::Real,
+                         font::AbstractString = "Helvetica, Arial, sans-serif", ink::AbstractString = "#333333",
+                         line_h::Real = 11.5, id::AbstractString = "Info")
+    isempty(info) && return
+    svg_group_open(io, svg_id(seen, id); font_family = font, font_size = 10, fill = ink)
+    for (k, t) in enumerate(info)
+        svg_text(io, left + (k - 1) * 0.2 * pw, y, t; id = svg_id(seen, "$(id)_column_$(k)"), anchor = "start",
+                  top = true, line_height = line_h / 10)
+    end
+    svg_group_close(io)
+end
+
+"""
     svg_legend_layer(io, seen, entries; x, y, title = nothing, id = "Legend",
                       font, ink, line_height = 17.0, box = false)
 

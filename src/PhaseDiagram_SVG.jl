@@ -348,8 +348,7 @@ function pd_export_svg(parts, path::AbstractString)
     ml, mr, mt = 64.0, 140.0, 48.0
     line_h = 11.5
 
-    info_lines = isempty(parts.info) ? 0 : maximum(length(svg_text_runs(t)) for t in parts.info)
-    info_h     = info_lines * line_h
+    info_h     = svg_info_height(parts.info; line_h = line_h)
     ncol       = 3
     list_rows  = cld(length(parts.assemblages), ncol)
     list_h     = list_rows * 10.5
@@ -451,13 +450,7 @@ function pd_export_svg(parts, path::AbstractString)
     end
 
     y_info = bottom + 62
-    if !isempty(parts.info)
-        svg_group_open(io, svg_id(seen, "Info"); font_family = font, font_size = 10, fill = ink)
-        for (k, t) in enumerate(parts.info)
-            svg_text(io, left + (k - 1) * 0.2 * pw, y_info, t; id = svg_id(seen, "Info_column_$(k)"), anchor = "start", top = true, line_height = line_h / 10)
-        end
-        svg_group_close(io)
-    end
+    svg_info_layer(io, seen, parts.info; left = left, y = y_info, pw = pw, font = font, ink = ink, line_h = line_h)
 
     if !isempty(parts.assemblages)
         y_list = y_info + (info_h > 0 ? info_h + 24 : 0)

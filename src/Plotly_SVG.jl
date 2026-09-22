@@ -511,7 +511,8 @@ end
 
     Returns `(path, bytes, n_paths, warnings)`.
 """
-function plotly_export_svg(fig, path::AbstractString; canvas_title::Union{Nothing,AbstractString} = nothing, config = nothing)
+function plotly_export_svg(fig, path::AbstractString; canvas_title::Union{Nothing,AbstractString} = nothing, config = nothing,
+                            extra_info::Union{Nothing,Tuple{String,String}} = nothing)
     layout = pget(fig, :layout)
     raw_traces = pget(fig, :data, default = [])
     warnings = String[]
@@ -531,7 +532,7 @@ function plotly_export_svg(fig, path::AbstractString; canvas_title::Union{Nothin
     if any(t -> t.kind == :scatterternary, traces)
         return plotly_export_ternary_svg(traces, layout, path, title, warnings)
     end
-    return plotly_export_cartesian_svg(traces, layout, path, title, warnings; config = config)
+    return plotly_export_cartesian_svg(traces, layout, path, title, warnings; config = config, extra_info = extra_info)
 end
 
 """
@@ -622,7 +623,8 @@ end
 
     The non-ternary path of [`plotly_export_svg`](@ref).
 """
-function plotly_export_cartesian_svg(traces::Vector{PTrace}, layout, path::AbstractString, title::AbstractString, warnings::Vector{String}; config = nothing)
+function plotly_export_cartesian_svg(traces::Vector{PTrace}, layout, path::AbstractString, title::AbstractString, warnings::Vector{String};
+                                      config = nothing, extra_info::Union{Nothing,Tuple{String,String}} = nothing)
     real  = filter(!ptrace_dummy, traces)
     dummy = filter(ptrace_dummy, traces)
     real  = merge_boundary_traces(real)
@@ -670,6 +672,16 @@ function plotly_export_cartesian_svg(traces::Vector{PTrace}, layout, path::Abstr
     if yax.reversed
         yax = PAxis(yax.kind, yax.hi, yax.lo, yax.categories, yax.tickvals, yax.ticklabels, yax.tick_angle, yax.title, false)
     end
+
+    info = extra_info === nothing ? String[] : [extra_info[1], extra_info[2]]
+    info_h = svg_info_height(info)
+    # extra room goes into the bottom margin, not into a taller plot area - ph itself
+    # (the data plot's own height) must stay exactly what it was computed to be above,
+    # same as pd_export_svg keeps its own 590px plot area fixed and grows `mb` instead.
+    # mb0 (the original tick-label/axis-title allowance) is kept so the info box starts
+    # after that zone, not right at the frame edge where it would overlap the ticks.
+    mb0 = mb
+    mb += info_h > 0 ? info_h + 24 : 0.0
 
     width  = ml + pw + mr
     height = mt + ph + mb
@@ -825,6 +837,8 @@ function plotly_export_cartesian_svg(traces::Vector{PTrace}, layout, path::Abstr
             svg_legend_layer(io, seen, entries; x = c.ml + svg_plot_width(c) + 20, y = ycur, id = "Legend")
         end
     end
+
+    svg_info_layer(io, seen, info; left = c.ml, y = c.mt + ph + mb0 + 14, pw = svg_plot_width(c))
 
     svg_close(io)
     bytes = take!(io)
@@ -1002,7 +1016,7 @@ function svg_export_button_row(graph_id::AbstractString)
 end
 
 """
-    register_svg_export!(app, graph_id, filename_stem)
+    register_svg_export!(app, graph_id, filename_stem; extra_states = (), info_fn = nothing)
 
     Register the export callback for one figure: clicking `<graph_id>-svg-button`
     (from [`svg_export_button_row`](@ref)) reads the figure straight off
@@ -1012,23 +1026,40 @@ end
     `pd_export_status` in `<graph_id>-svg-status`. A separate small callback per
     figure (rather than one big one over the whole table) so each one only ever
     reads its own graph and never collides with another Output.
+
+    `extra_states`/`info_fn` add a below-the-plot provenance text box (`extra_info` on
+    [`plotly_export_svg`](@ref)) that exists *only* in the exported file - it is built
+    fresh, server-side, right here inside the click handler, from whatever globals
+    `info_fn` reads (`Out_PTX`/`Out_TE_PTX` for the PTX tab), never added to the figure
+    the browser actually displays. `extra_states` is zero or more extra `(component_id,
+    prop)` Dash `State`s to read (e.g. `[("te-ptx-step-id", "value"),
+    ("normalization-te-ptx", "value")]`, for a figure whose info depends on a UI
+    selection); `info_fn` is called with their values, in order, positionally, and must
+    return a `(labels, values)` tuple or `nothing`.
 """
-function register_svg_export!(app, graph_id::AbstractString, filename_stem::AbstractString)
+function register_svg_export!(app, graph_id::AbstractString, filename_stem::AbstractString;
+                               extra_states = (),
+                               info_fn::Union{Nothing,Function} = nothing)
+    states = Any[State(graph_id, "figure"), State(graph_id, "config")]
+    for (cid, prop) in extra_states
+        push!(states, State(cid, prop))
+    end
     callback!(
         app,
         Output(graph_id * "-svg-status", "children"),
         Input(graph_id * "-svg-button", "n_clicks"),
-        State(graph_id, "figure"),
-        State(graph_id, "config"),
+        states...,
         prevent_initial_call = true,
-    ) do _n, fig, config
+    ) do cb_args...
+        fig, config = cb_args[2], cb_args[3]
         global output_dir
         if fig === nothing || isempty(pget(fig, :data, default = []))
             return pd_export_status("Nothing to export yet - compute/display the figure first."; ok = false)
         end
         try
             mkpath(output_dir[1])
-            r   = plotly_export_svg(fig, output_dir[1] * filename_stem * ".svg"; config = config)
+            extra_info = info_fn === nothing ? nothing : info_fn(cb_args[4:end]...)
+            r   = plotly_export_svg(fig, output_dir[1] * filename_stem * ".svg"; config = config, extra_info = extra_info)
             msg = "Saved $(r.path) ($(round(r.bytes / 1024, digits = 1)) KB, $(r.n_paths) paths)."
             isempty(r.warnings) || (msg *= " " * join(r.warnings, "; ") * ".")
             return pd_export_status(msg; ok = true)
@@ -1055,10 +1086,11 @@ const PTX_SVG_EXPORTS = [
     ("TAS-plot",             "PTX_TAS_volcanic"),
     ("TAS-pluto-plot",       "PTX_TAS_plutonic"),
     ("AFM-plot",             "PTX_AFM"),
-    ("ree-spectrum-ptx",     "PTX_TE_spectrum"),
-    ("te-evol-ptx",          "PTX_TE_evolution"),
     ("te-fieldbuilder-ptx",  "PTX_TE_fieldbuilder"),
 ]
+# ree-spectrum-ptx (PTX_TE_spectrum) and te-evol-ptx (PTX_TE_evolution) are registered
+# separately, in Tab_PTXpaths_Callbacks.jl, with the extra `info_fn` that builds their
+# export-only provenance box - see register_svg_export!'s docstring.
 
 """
     PD_CLASSIFICATION_SVG_EXPORTS
