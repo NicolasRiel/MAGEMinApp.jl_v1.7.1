@@ -943,7 +943,7 @@ function Tab_Simulation_Callbacks(app)
         Input(  "pressure-unit-dropdown",   "value"     ),
         Input(  "upload-pt-path",           "contents"  ),
         State(  "upload-pt-path",           "filename"  ),
-        State(  "save-state-filename-id",   "value"     ),
+        State(  "load-state-filename-id",   "value"     ),
         State(  "pt-x-table",               "data"      ),
         State(  "pt-x-table",               "columns"   ),
         State(  "pressure-unit-prev",       "children"  ),
@@ -1300,7 +1300,7 @@ function Tab_Simulation_Callbacks(app)
         Input( "select-bulk-unit","value"),
 
         State( "table-bulk-rock","data"),
-        State( "save-state-filename-id",   "value"    ),
+        State( "load-state-filename-id",   "value"    ),
         State( "test-dropdown","options"),
         State( "database-caption","value"),
 
@@ -1365,7 +1365,7 @@ function Tab_Simulation_Callbacks(app)
         Input( "select-bulk-unit","value"),
         State( "table-2-bulk-rock","data"),
 
-        State( "save-state-filename-id",   "value"     ),
+        State( "load-state-filename-id",   "value"     ),
         State( "test-2-dropdown","options"),
 
         prevent_initial_call=true,
@@ -1440,7 +1440,7 @@ function Tab_Simulation_Callbacks(app)
         Input("test-te-dropdown","value"),
         Input("output-te-uploadn", "is_open"),        # this listens for changes and updated the list
         Input(  "load-state-diagram-button","n_clicks"  ),
-        State(  "save-state-filename-id",   "value"     ),
+        State(  "load-state-filename-id",   "value"     ),
         prevent_initial_call=true,
     ) do test, update,
         n_clicks_load, filename
@@ -1485,7 +1485,7 @@ function Tab_Simulation_Callbacks(app)
         Input("test-2-te-dropdown","value"),
         Input("output-te-uploadn", "is_open"),        # this listens for changes and updated the list
         Input(  "load-state-diagram-button","n_clicks"  ),
-        State(  "save-state-filename-id",   "value"     ),
+        State(  "load-state-filename-id",   "value"     ),
         prevent_initial_call=true,
     ) do test, update,
         n_clicks_load, filename
