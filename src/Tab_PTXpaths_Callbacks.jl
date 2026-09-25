@@ -817,18 +817,20 @@ function Tab_PTXpaths_Callbacks(app)
                 end
             end
         elseif bid == "transfer-bulk-button"
-            global point_id
+            global point_id, using_sample_point, SamplePoint
 
-            bulkrock    = zeros(Float64,length(Out_XY[point_id].oxides))
-            oxides      = Out_XY[point_id].oxides
-            dbin        = Out_XY[point_id].database
+            out         = using_sample_point ? SamplePoint.out : Out_XY[point_id]     #point_id/SamplePoint are defined as global variables in the Phase diagram pie-chart callback
+
+            bulkrock    = zeros(Float64,length(out.oxides))
+            oxides      = out.oxides
+            dbin        = out.database
             test 		= length(db[(db.db .== dbin), :].test);
             if transfer_bulk_id == "Solid"
-                bulkrock = Out_XY[point_id].bulk_S
+                bulkrock = out.bulk_S
             elseif transfer_bulk_id == "Melt"
-                bulkrock = Out_XY[point_id].bulk_M
+                bulkrock = out.bulk_M
             else
-                bulkrock = Out_XY[point_id].bulk
+                bulkrock = out.bulk
             end
 
             if sum(bulkrock) == 0.0

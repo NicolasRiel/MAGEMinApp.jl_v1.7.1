@@ -60,6 +60,42 @@ function Tab_MonteCarlo()
                         ]),
                         html_div("‎ "),
                         dbc_row([
+                            dbc_col([
+                                dbc_button("Load WDS from bulk", id="mc-sigma-wds-button", color="light", n_clicks=0,
+                                    style = Dict( "textAlign" => "center", "font-size" => "90%",
+                                                  "border"    => "1px grey solid", "width" => "100%")),
+                                dbc_tooltip(
+                                    "Fills σ from the _wds columns of the currently selected bulk-rock composition (see examples/bulk-rock.csv). Oxides without WDS data keep their current σ.",
+                                    target="mc-sigma-wds-button"),
+                            ]),
+                        ]),
+                        dbc_alert(
+                            "",
+                            id      = "mc-sigma-wds-warning",
+                            color   = "warning",
+                            is_open = false,
+                            duration= 6000,
+                        ),
+                        html_div("‎ "),
+                        dbc_row([
+                            dbc_col([
+                                html_h1("Unit", style = Dict("textAlign" => "center","font-size" => "100%", "marginTop" => 0, "marginBottom" => 0)),
+                            ], width=3),
+                            dbc_col([
+                                dcc_dropdown(   id      = "mc-bulk-unit",
+                                options = [
+                                    (label = "mol%",                value = 1),
+                                    (label = "wt%",                 value = 2),
+                                ],
+                                value       = 1,
+                                style       = Dict("border" => "none"),
+                                clearable   = false,
+                                multi       = false),
+                            ], width=4),
+                        ], align="center"),
+                        dcc_store(id="mc-bulk-unit-prev", data=1),
+                        html_div("‎ "),
+                        dbc_row([
                             dash_datatable(
                                 id          = "mc-sigma-table",
                                 columns     = [

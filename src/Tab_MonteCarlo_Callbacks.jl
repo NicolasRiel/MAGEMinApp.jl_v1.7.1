@@ -14,43 +14,131 @@ function Tab_MonteCarlo_Callbacks(app)
     """
         Populate/reset the Uncertainty tab's per-oxide σ table: from the
         current Setup-tab bulk on first opening the tab, from
-        `mc_default_sigma.csv` on "Reset", or with one value applied to
-        every row on "Apply to all oxides".
+        `mc_default_sigma.csv` on "Reset", with one value applied to every
+        row on "Apply to all oxides", from the selected bulk-rock's own WDS
+        data (`_wds` CSV columns, see `bulk_csv_to_db`) on "Load WDS from
+        bulk" (which also switches the mode to "absolute", since WDS values
+        are absolute mol% 1σ, not a % of each oxide's value), or re-expressed
+        in the other unit on a mol%/wt% toggle.
+
+        A "relative %" σ is unit-independent (it is already a % of that
+        oxide's own value, whichever unit that value is shown in) and is
+        never touched by the unit toggle. An "absolute" σ is not, so
+        switching units converts it via [`mc_convert_absolute_sigma`](@ref),
+        using `mc-bulk-unit-prev` (the unit the table was last rendered in)
+        to know which direction to convert.
     """
     callback!(
         app,
-        Output("mc-sigma-table", "data"),
+        Output("mc-sigma-table",       "data"),
+        Output("mc-sigma-table",       "columns"),
+        Output("mc-sigma-mode",        "value"),
+        Output("mc-sigma-wds-warning", "children"),
+        Output("mc-sigma-wds-warning", "is_open"),
+        Output("mc-bulk-unit-prev",    "data"),
 
         Input("pd-sidebar-tabs",       "active_tab"),
         Input("mc-sigma-reset-button", "n_clicks"),
         Input("mc-sigma-all-button",   "n_clicks"),
+        Input("mc-sigma-wds-button",   "n_clicks"),
+        Input("mc-bulk-unit",          "value"),
 
         State("table-bulk-rock",    "data"),
         State("select-bulk-unit",   "value"),
         State("mc-sigma-table",     "data"),
         State("mc-sigma-all-value", "value"),
+        State("database-dropdown",  "value"),
+        State("test-dropdown",      "value"),
+        State("mc-sigma-mode",      "value"),
+        State("mc-bulk-unit-prev",  "data"),
 
         prevent_initial_call = true,
-    ) do active_tab, _n_reset, _n_all, bulk1, sys_unit, sigma_data, sigma_all_value
+    ) do active_tab, _n_reset, _n_all, _n_wds, mc_bulk_unit,
+            bulk1, sys_unit, sigma_data, sigma_all_value, dtb, test_val, sigma_mode, prev_unit
 
         bid = pushed_button( callback_context() )
 
         if bid == "pd-sidebar-tabs" && (active_tab != "tab-uncertainty" || !isempty(sigma_data))
-            return no_update()
+            return no_update(), no_update(), no_update(), no_update(), no_update(), no_update()
         end
+
+        columns(unit) = [
+            Dict("id" => "oxide", "name" => "oxide"),
+            Dict("id" => "value", "name" => unit == 2 ? "value [wt%]" : "value [mol%]"),
+            Dict("id" => "sigma", "name" => "σ", "editable" => true),
+        ]
 
         if bid == "mc-sigma-all-button"
             if isempty(sigma_data)
-                return no_update()
+                return no_update(), no_update(), no_update(), no_update(), no_update(), no_update()
             end
-            return [Dict("oxide" => r[:oxide], "value" => r[:value], "sigma" => sigma_all_value) for r in sigma_data]
+            new_data = [Dict("oxide" => r[:oxide], "value" => r[:value], "sigma" => sigma_all_value) for r in sigma_data]
+            return new_data, no_update(), no_update(), no_update(), no_update(), no_update()
+        end
+
+        if bid == "mc-sigma-wds-button"
+            if isempty(sigma_data)
+                return no_update(), no_update(), no_update(), "Open the Uncertainty tab (or compute a phase diagram) first.", true, no_update()
+            end
+            if !hasproperty(db, :wds)
+                return no_update(), no_update(), no_update(), "No bulk-rock CSV with WDS (_wds) columns has been loaded yet.", true, no_update()
+            end
+
+            rows = db[(db.db .== dtb) .& (db.test .== test_val), :]
+            wds_by_oxide = (isempty(rows) || ismissing(rows.wds[1])) ? Dict{String,Float64}() :
+                Dict(rows.oxide[1][k] => rows.wds[1][k] for k in eachindex(rows.oxide[1]) if !isnan(rows.wds[1][k]))
+
+            if isempty(wds_by_oxide)
+                return no_update(), no_update(), no_update(), "No WDS data for the currently selected bulk-rock composition.", true, no_update()
+            end
+
+            # WDS is always computed in absolute mol% (bulk_csv_to_db), so if the table
+            # is currently showing wt%, the loaded σ must be converted to match
+            oxi_row = rows.oxide[1]
+            if mc_bulk_unit == 2
+                bulk_L, _, oxi = get_bulkrock_prop(bulk1, bulk1; sys_unit = sys_unit)
+                vals_mol = Dict(oxi[i] => bulk_L[i]*100.0 for i in eachindex(oxi))
+                wds_mol  = [get(wds_by_oxide, ox, NaN) for ox in oxi_row]
+                bulk_mol = [get(vals_mol, ox, 0.0) for ox in oxi_row]
+                wds_wt   = mc_convert_absolute_sigma(bulk_mol, wds_mol, oxi_row, true)
+                wds_by_oxide = Dict(oxi_row[k] => wds_wt[k] for k in eachindex(oxi_row) if !isnan(wds_wt[k]))
+            end
+
+            new_data = [Dict("oxide" => r[:oxide], "value" => r[:value], "sigma" => get(wds_by_oxide, r[:oxide], r[:sigma])) for r in sigma_data]
+            return new_data, no_update(), "absolute", no_update(), false, no_update()
         end
 
         bulk_L, _, oxi = get_bulkrock_prop(bulk1, bulk1; sys_unit = sys_unit)
-        vals    = bulk_L .* 100.0
-        sigma   = mc_sigma_for_oxides(oxi)
+        vals_mol = bulk_L .* 100.0
+        vals_wt  = mol2wt(bulk_L, oxi)     # mol2wt renormalizes its own output to sum 100, like vals_mol above
 
-        return [Dict("oxide" => oxi[i], "value" => round(vals[i], digits = 4), "sigma" => sigma[i]) for i in eachindex(oxi)]
+        if bid == "mc-bulk-unit"
+            if isempty(sigma_data)
+                return no_update(), no_update(), no_update(), no_update(), no_update(), mc_bulk_unit
+            end
+
+            sigma_lookup = Dict(String(r[:oxide]) => (r[:sigma] isa String ? parse(Float64, r[:sigma]) : Float64(r[:sigma])) for r in sigma_data)
+            sigma_old    = [get(sigma_lookup, oxi[i], 0.0) for i in eachindex(oxi)]
+
+            if sigma_mode == "absolute" && prev_unit != mc_bulk_unit
+                vals_prev = prev_unit == 2 ? vals_wt : vals_mol
+                converted = mc_convert_absolute_sigma(vals_prev, sigma_old, oxi, mc_bulk_unit == 2)
+                sigma_new = [isnan(converted[i]) ? sigma_old[i] : converted[i] for i in eachindex(converted)]
+            else
+                sigma_new = sigma_old
+            end
+
+            vals_new = mc_bulk_unit == 2 ? vals_wt : vals_mol
+            new_data = [Dict("oxide" => oxi[i], "value" => round(vals_new[i], digits = 4), "sigma" => round(sigma_new[i], digits = 6)) for i in eachindex(oxi)]
+            return new_data, columns(mc_bulk_unit), no_update(), no_update(), no_update(), mc_bulk_unit
+        end
+
+        # tab opened for the first time, or "Reset"
+        vals  = mc_bulk_unit == 2 ? vals_wt : vals_mol
+        sigma = mc_sigma_for_oxides(oxi)   # always relative %, so unit-independent
+
+        new_data = [Dict("oxide" => oxi[i], "value" => round(vals[i], digits = 4), "sigma" => sigma[i]) for i in eachindex(oxi)]
+        return new_data, columns(mc_bulk_unit), no_update(), no_update(), no_update(), mc_bulk_unit
     end
 
     """

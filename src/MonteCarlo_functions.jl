@@ -37,6 +37,42 @@ function mc_sigma_for_oxides(oxi::Vector{String}; fallback_pct::Float64 = 5.0)
 end
 
 """
+    mc_convert_absolute_sigma(bulk_from, sigma_from, oxi, to_wt::Bool)
+
+    Convert a per-oxide *absolute* σ from one basis to the other - mol -> wt
+    (`to_wt = true`, via `mol2wt`) or wt -> mol (`to_wt = false`, via
+    `wt2mol`) - so the Uncertainty tab's σ column stays scientifically
+    meaningful when its display unit is switched, and so an absolute σ
+    entered/displayed in wt% can be converted to the mol basis a Monte Carlo
+    run always uses internally (same trick `bulk_csv_to_db` uses for a CSV's
+    own `_wds` columns).
+
+    `bulk_from` and `sigma_from` must both already be expressed on the same
+    scale (e.g. both mol% or both a 0-1 mol fraction) and the same oxide
+    order as `oxi` - only their relative proportions matter, since
+    `mol2wt`/`wt2mol` are scale-invariant on input. Each oxide is converted
+    independently: perturb only that oxide's raw value by its own σ, holding
+    every other oxide's raw value fixed, and diff the resulting
+    `mol2wt`/`wt2mol` output - the same finite-difference approximation used
+    throughout, valid for σ that is small relative to the bulk itself.
+
+    An oxide with `sigma_from[i]` `NaN`, or `bulk_from[i] <= 0`, stays `NaN`.
+"""
+function mc_convert_absolute_sigma(bulk_from::Vector{Float64}, sigma_from::Vector{Float64}, oxi::Vector{String}, to_wt::Bool)
+    n = length(bulk_from)
+    @assert length(sigma_from) == n == length(oxi)
+    transform = to_wt ? mol2wt : wt2mol
+    base      = transform(bulk_from, oxi)
+    sigma_to  = fill(NaN, n)
+    for i in 1:n
+        (isnan(sigma_from[i]) || bulk_from[i] <= 0.0) && continue
+        perturbed   = copy(bulk_from); perturbed[i] += sigma_from[i]
+        sigma_to[i] = abs(transform(perturbed, oxi)[i] - base[i])
+    end
+    return sigma_to
+end
+
+"""
     mc_relative_sigma(bulk::Vector{Float64}, sigma::Vector{Float64}, mode::Symbol)
 
     Convert the σ column entered in the Uncertainty tab to a per-oxide

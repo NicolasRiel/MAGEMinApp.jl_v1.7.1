@@ -842,6 +842,13 @@ function get_bulkrock_prop(bulk1, bulk2; sys_unit = 1)
     if sys_unit == 2 #then we are using wt% as input
         bulk_L  = wt2mol(bulk_L,oxi)
         bulk_R  = wt2mol(bulk_R,oxi)
+        # wt2mol renormalizes its own output to sum to 100 regardless of input scale,
+        # so re-normalize back to a sum-1 fraction here to match the mol branch above
+        # (any caller reading an absolute value out of bulk_L/bulk_R, e.g. the
+        # Uncertainty tab's "value [mol%]" column, would otherwise be 100x too large
+        # for a wt-basis bulk)
+        bulk_L  = bulk_L ./ sum(bulk_L)
+        bulk_R  = bulk_R ./ sum(bulk_R)
     end
 
     return bulk_L, bulk_R, oxi

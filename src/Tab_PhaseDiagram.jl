@@ -255,13 +255,13 @@ function Tab_PhaseDiagram()
 
                                             dbc_row([
                                                 dbc_card([
-                                                    dcc_markdown(   id          = "computation-info-id", 
+                                                    dcc_markdown(   id          = "computation-info-id",
                                                                     children    = "",
                                                                     style       = Dict("white-space" => "pre"))
                                                 ])
                                             ]),
                                             dbc_row([
-                                                dbc_col([ 
+                                                dbc_col([
                                                     dcc_dropdown(   id      = "select-pie-unit",
                                                     options = [
                                                         (label = "mol%",                value = 1),
@@ -276,40 +276,10 @@ function Tab_PhaseDiagram()
                                             ]),
 
                                             dbc_row([
-                                                dbc_col([ 
+                                                dbc_col([
                                                     pie_plot(),
                                                 ]),
                                             ]),
-
-                                            html_div("‎ "),
-                                            html_h1("Transfer point as bulk for PTX path", style = Dict("textAlign" => "center","font-size" => "120%", "marginTop" => 4)),
-                                            html_hr(),
-                                            dbc_row([
-                                                dbc_col([
-                                                    html_h1("Name", style = Dict("textAlign" => "center","font-size" => "120%", "marginTop" => 4)),    
-                                                ], width=2),
-                                                dbc_col([ 
-                                                    dbc_input(
-                                                        id      = "transfer-bulk-name",
-                                                        type    = "text", 
-                                                        style   = Dict("textAlign" => "center") ,
-                                                        value   = "bulk-name"   ),     
-                                                ], width=3),
-                                                dbc_col([
-                                                    dcc_dropdown(   id          = "transfer-bulk-id",
-                                                                    options     =  ["Solid","Melt","Whole-rock"],
-                                                                    value       = "Melt" ,
-                                                                    clearable   =  false,
-                                                                    multi       =  false),
-                                                ], width=3), 
-                                                dbc_col([    
-                                                    dbc_button("transfer", id="transfer-bulk-button", color="light",  n_clicks=0,
-                                                    style       = Dict( "textAlign"     => "center",
-                                                                        "font-size"     => "100%",
-                                                                        "border"        =>"1px grey solid")), 
-                                                ], width=3),
-                                            ]),
-
 
                                             html_div([
                                             ], style = Dict("display" => "none"), id      = "test-show-id"),
@@ -349,7 +319,71 @@ function Tab_PhaseDiagram()
                                                     ),
                                                 ]),
                                             ], style = Dict("display" => "none"), id      = "disp-test-id"),
-                                            
+
+                                            html_div("‎ "),
+                                            html_hr(),
+                                            html_div([
+                                                html_h1("Sample point", style = Dict("textAlign" => "center","font-size" => "120%", "marginTop" => 4)),
+                                                dbc_row([
+                                                    dbc_col([
+                                                        html_h1("Pressure [kbar]", id = "sample-point-p-label-id", style = Dict("textAlign" => "center","font-size" => "100%")),
+                                                        dbc_input(id = "sample-point-p-id", type = "number", value = 5.0, style = Dict("textAlign" => "center")),
+                                                    ], width=6, id = "sample-point-p-div-id"),
+                                                    dbc_col([
+                                                        html_h1("Temperature [°C]", style = Dict("textAlign" => "center","font-size" => "100%")),
+                                                        dbc_input(id = "sample-point-t-id", type = "number", value = 600.0, style = Dict("textAlign" => "center")),
+                                                    ], width=6, id = "sample-point-t-div-id"),
+                                                    dbc_col([
+                                                        html_h1("X (bulk-rock 1 → 2)", style = Dict("textAlign" => "center","font-size" => "100%")),
+                                                        dbc_input(id = "sample-point-x-id", type = "number", min = 0.0, max = 1.0, value = 0.5, style = Dict("textAlign" => "center")),
+                                                    ], width=6, id = "sample-point-x-div-id", style = Dict("display" => "none")),
+                                                ]),
+                                                dbc_row([
+                                                    dbc_col([
+                                                        dbc_button("Compute", id = "compute-sample-point-button", color="light",  n_clicks=0,
+                                                        style       = Dict( "textAlign"     => "center",
+                                                                            "font-size"     => "100%",
+                                                                            "border"        => "1px grey solid",
+                                                                            "width"         => "100%" )),
+                                                    ]),
+                                                ]),
+                                                dbc_alert(
+                                                    "",
+                                                    id      = "sample-point-error-id",
+                                                    color   = "danger",
+                                                    is_open = false,
+                                                    duration= 6000,
+                                                ),
+                                            ], style = Dict("display" => "block"), id = "sample-point-section-id"),
+                                            html_hr(),
+                                            html_h1("Transfer point as bulk for PTX path", style = Dict("textAlign" => "center","font-size" => "120%", "marginTop" => 4)),
+                                            html_hr(),
+                                            dbc_row([
+                                                dbc_col([
+                                                    html_h1("Name", style = Dict("textAlign" => "center","font-size" => "120%", "marginTop" => 4)),
+                                                ], width=2),
+                                                dbc_col([
+                                                    dbc_input(
+                                                        id      = "transfer-bulk-name",
+                                                        type    = "text",
+                                                        style   = Dict("textAlign" => "center") ,
+                                                        value   = "bulk-name"   ),
+                                                ], width=3),
+                                                dbc_col([
+                                                    dcc_dropdown(   id          = "transfer-bulk-id",
+                                                                    options     =  ["Solid","Melt","Whole-rock"],
+                                                                    value       = "Melt" ,
+                                                                    clearable   =  false,
+                                                                    multi       =  false),
+                                                ], width=3),
+                                                dbc_col([
+                                                    dbc_button("transfer", id="transfer-bulk-button", color="light",  n_clicks=0,
+                                                    style       = Dict( "textAlign"     => "center",
+                                                                        "font-size"     => "100%",
+                                                                        "border"        =>"1px grey solid")),
+                                                ], width=3),
+                                            ]),
+
                                             # SAVE POINTS INFORMATION
                                             html_hr(),
                                             dbc_row([
