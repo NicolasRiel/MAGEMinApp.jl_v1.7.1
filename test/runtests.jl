@@ -12,6 +12,10 @@ if endswith(cur_dir, "test")
 end
 
 
+@testset "state io" begin
+    include(joinpath(@__DIR__, "test_state_io.jl"))
+end
+
 @testset "serial" begin
     include(joinpath(@__DIR__, "tests.jl"))
 end
